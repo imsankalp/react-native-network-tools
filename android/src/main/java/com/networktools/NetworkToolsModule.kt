@@ -2,6 +2,8 @@ package com.networktools
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
+import com.networktools.storage.NetworkRequestStorage
+import org.json.JSONArray
 
 @ReactModule(name = NetworkToolsModule.NAME)
 class NetworkToolsModule(reactContext: ReactApplicationContext) :
@@ -11,10 +13,38 @@ class NetworkToolsModule(reactContext: ReactApplicationContext) :
     return NAME
   }
 
-  // Example method
-  // See https://reactnative.dev/docs/native-modules-android
-  override fun multiply(a: Double, b: Double): Double {
-    return a * b
+  override fun enable() {
+    NetworkToolsManager.enable()
+  }
+
+  override fun disable() {
+    NetworkToolsManager.disable()
+  }
+
+  override fun isEnabled(): Boolean {
+    return NetworkToolsManager.isEnabled()
+  }
+
+  override fun getAllRequests(): String {
+    val requests = NetworkRequestStorage.getAllRequests()
+    val jsonArray = JSONArray()
+    requests.forEach { request ->
+      jsonArray.put(request.toJson())
+    }
+    return jsonArray.toString()
+  }
+
+  override fun getRequestById(id: String): String {
+    val request = NetworkRequestStorage.getRequestById(id)
+    return request?.toJson()?.toString() ?: "{}"
+  }
+
+  override fun clearAllRequests() {
+    NetworkRequestStorage.clearAll()
+  }
+
+  override fun getRequestCount(): Double {
+    return NetworkRequestStorage.getCount().toDouble()
   }
 
   companion object {
