@@ -33,6 +33,7 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    buildConfigField "boolean", "NETWORK_TOOLS_ENABLED", "true"
   }
 
   buildFeatures {
