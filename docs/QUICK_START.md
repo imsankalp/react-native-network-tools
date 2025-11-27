@@ -17,17 +17,24 @@ yarn add react-native-network-tools
 Edit `android/app/src/main/java/com/yourapp/MainApplication.kt`:
 
 ```kotlin
-import com.networktools.NetworkToolsManager  // Add this import
+// Add these imports
+import com.networktools.NetworkToolsManager 
+import com.facebook.react.modules.network.NetworkingModule
+import okhttp3.OkHttpClient
 
 class MainApplication : Application(), ReactApplication {
-  override val reactNativeHost: ReactNativeHost =
-    object : DefaultReactNativeHost(this) {
-      // Add this method
-      override fun createOkHttpClientBuilder(): OkHttpClient.Builder {
-        return super.createOkHttpClientBuilder()
-          .apply { NetworkToolsManager.addInterceptor(this) }
+  override fun onCreate() {
+    super.onCreate()
+
+    NetworkingModule.setCustomClientBuilder(
+      object : NetworkingModule.CustomClientBuilder {
+        override fun apply(builder: OkHttpClient.Builder) {
+          NetworkToolsManager.addInterceptor(builder)
+        }
       }
-    }
+    )
+    // rest code
+  }
 }
 ```
 

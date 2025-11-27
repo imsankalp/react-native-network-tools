@@ -30,14 +30,21 @@ import com.networktools.NetworkToolsManager
 import okhttp3.OkHttpClient
 
 class MainApplication : Application(), ReactApplication {
-  override val reactNativeHost: ReactNativeHost =
-    object : DefaultReactNativeHost(this) {
-      override fun createOkHttpClientBuilder(): OkHttpClient.Builder {
-        val builder = super.createOkHttpClientBuilder()
-        NetworkToolsManager.addInterceptor(builder)
-        return builder
+
+
+  override fun onCreate() {
+    super.onCreate()
+
+    NetworkingModule.setCustomClientBuilder(
+      object : NetworkingModule.CustomClientBuilder {
+        override fun apply(builder: OkHttpClient.Builder) {
+          NetworkToolsManager.addInterceptor(builder)
+        }
       }
-    }
+    )
+
+    // rest code
+  }
 }
 ```
 

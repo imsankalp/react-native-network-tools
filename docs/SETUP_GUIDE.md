@@ -44,20 +44,19 @@ import okhttp3.OkHttpClient
 
 class MainApplication : Application(), ReactApplication {
 
-  override val reactNativeHost: ReactNativeHost =
-    object : DefaultReactNativeHost(this) {
-      // ... other configurations
+  override fun onCreate() {
+    super.onCreate()
 
-      override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
-
-      // Override to customize OkHttpClient
-      override fun createOkHttpClientBuilder(): OkHttpClient.Builder {
-        val builder = super.createOkHttpClientBuilder()
-        // Add NetworkTools interceptor
-        NetworkToolsManager.addInterceptor(builder)
-        return builder
+    NetworkingModule.setCustomClientBuilder(
+      object : NetworkingModule.CustomClientBuilder {
+        override fun apply(builder: OkHttpClient.Builder) {
+          NetworkToolsManager.addInterceptor(builder)
+        }
       }
-    }
+    )
+
+    // rest code
+  }
 }
 ```
 
@@ -81,13 +80,25 @@ public class MainApplication extends Application implements ReactApplication {
         return BuildConfig.DEBUG;
       }
 
-      @Override
-      protected OkHttpClient.Builder createOkHttpClientBuilder() {
-        OkHttpClient.Builder builder = super.createOkHttpClientBuilder();
-        // Add NetworkTools interceptor
-        NetworkToolsManager.addInterceptor(builder);
-        return builder;
-      }
+ @Override
+public void onCreate() {
+    super.onCreate();
+
+    // Use NetworkingModule.setCustomClientBuilder to set the custom builder logic
+    NetworkingModule.setCustomClientBuilder(
+        new NetworkingModule.CustomClientBuilder() { // 1. Create an anonymous class
+            
+            // 2. Implement the required 'apply' method
+            @Override
+            public void apply(OkHttpClient.Builder builder) {
+                // 3. Call your static/utility method to add the interceptor
+                NetworkToolsManager.addInterceptor(builder);
+            }
+        }
+    );
+
+    // rest of your code
+}
     };
 }
 ```
