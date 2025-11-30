@@ -10,6 +10,8 @@
     "build:ios": "react-native build-ios --mode Debug"
   },
   "dependencies": {
+    "@rneui/base": "^4.0.0-rc.8",
+    "@rneui/themed": "^4.0.0-rc.8",
     "react": "19.1.0",
     "react-native": "0.81.1"
   },
