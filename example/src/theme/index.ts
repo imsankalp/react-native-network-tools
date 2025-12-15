@@ -1,5 +1,3 @@
-import { createTheme } from '@rneui/themed';
-
 export const colors = {
   primary: '#4A6FA5', // Primary brand color
   secondary: '#6B4E90', // Secondary brand color
@@ -20,7 +18,7 @@ export const colors = {
   transparent: 'transparent',
 };
 
-const theme = createTheme({
+const theme = {
   lightColors: {
     ...colors,
   },
@@ -85,7 +83,7 @@ const theme = createTheme({
       placeholderTextColor: colors.grey3,
     },
   },
-});
+};
 
 export const spacing = {
   xs: 4,
