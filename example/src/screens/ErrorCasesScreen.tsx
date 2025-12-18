@@ -69,46 +69,48 @@ const ErrorCasesScreen = () => {
       },
     },
     {
-      title: 'Invalid JSON Response',
-      description: 'Server returns invalid JSON',
+      title: '404 Not Found',
+      description: 'Request a non-existent resource',
       action: async () => {
-        setLoading('invalid-json');
+        setLoading('not-found');
         setResponse(null);
         try {
-          // This will cause a JSON parse error
-          await apiClient.get('https://httpbin.org/bytes/20');
+          // Request a post that doesn't exist
+          await apiClient.get(ENDPOINTS.GET_POST(99999));
         } catch (error: any) {
-          handleError(error, 'invalid-json');
+          handleError(error, 'not-found');
         } finally {
           setLoading(null);
         }
       },
     },
     {
-      title: '4xx Error',
-      description: 'Client error (e.g., 404 Not Found)',
+      title: 'Invalid Endpoint',
+      description: 'Request an invalid API endpoint',
       action: async () => {
-        setLoading('client-error');
+        setLoading('invalid-endpoint');
         setResponse(null);
         try {
-          await apiClient.get('https://httpbin.org/status/404');
+          await apiClient.get(
+            'https://jsonplaceholder.typicode.com/invalid-endpoint'
+          );
         } catch (error: any) {
-          handleError(error, 'client-error');
+          handleError(error, 'invalid-endpoint');
         } finally {
           setLoading(null);
         }
       },
     },
     {
-      title: '5xx Error',
-      description: 'Server error (e.g., 500 Internal Server Error)',
+      title: 'Network Unreachable',
+      description: 'Try to reach an unreachable server',
       action: async () => {
-        setLoading('server-error');
+        setLoading('unreachable');
         setResponse(null);
         try {
-          await apiClient.get('https://httpbin.org/status/500');
+          await apiClient.get('http://192.0.2.1:8080/api/test');
         } catch (error: any) {
-          handleError(error, 'server-error');
+          handleError(error, 'unreachable');
         } finally {
           setLoading(null);
         }
@@ -121,7 +123,8 @@ const ErrorCasesScreen = () => {
         setLoading('cancellation');
         setResponse(null);
 
-        const CancelToken = require('axios').CancelToken;
+        const axios = require('axios');
+        const CancelToken = axios.CancelToken;
         const source = CancelToken.source();
 
         // Set a timeout to cancel the request
@@ -130,11 +133,13 @@ const ErrorCasesScreen = () => {
         }, 500);
 
         try {
-          await apiClient.get(ENDPOINTS.withDelay(ENDPOINTS.GET_POSTS, 2000), {
+          // Use delay to ensure the request is in-flight when cancelled
+          await apiClient.get(ENDPOINTS.GET_PHOTOS, {
             cancelToken: source.token,
+            delay: 2000,
           });
         } catch (error: any) {
-          if (require('axios').isCancel(error)) {
+          if (axios.isCancel(error)) {
             setResponse({
               type: 'cancellation',
               error: error.message,
@@ -142,6 +147,37 @@ const ErrorCasesScreen = () => {
           } else {
             handleError(error, 'cancellation');
           }
+        } finally {
+          setLoading(null);
+        }
+      },
+    },
+    {
+      title: 'Concurrent Requests',
+      description: 'Make multiple requests simultaneously',
+      action: async () => {
+        setLoading('concurrent');
+        setResponse(null);
+        try {
+          const results = await Promise.all([
+            apiClient.get(ENDPOINTS.GET_POSTS),
+            apiClient.get(ENDPOINTS.GET_USERS),
+            apiClient.get(ENDPOINTS.GET_TODOS),
+          ]);
+          setResponse({
+            type: 'concurrent',
+            status: 200,
+            data: {
+              message: 'All requests completed successfully',
+              results: results.map((r, i) => ({
+                request: i + 1,
+                status: r.status,
+                dataLength: Array.isArray(r.data) ? r.data.length : 1,
+              })),
+            },
+          });
+        } catch (error: any) {
+          handleError(error, 'concurrent');
         } finally {
           setLoading(null);
         }

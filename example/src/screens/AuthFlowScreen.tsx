@@ -22,8 +22,7 @@ interface AuthState {
 
 const AuthFlowScreen = () => {
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState('user1');
-  const [password, setPassword] = useState('password');
+  const [userId, setUserId] = useState('1');
   const [response, setResponse] = useState<any>(null);
   const [auth, setAuth] = useState<AuthState>({
     isAuthenticated: false,
@@ -35,8 +34,8 @@ const AuthFlowScreen = () => {
   });
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Error', 'Please enter both username and password');
+    if (!userId) {
+      Alert.alert('Error', 'Please enter a user ID (1-10)');
       return;
     }
 
@@ -44,22 +43,27 @@ const AuthFlowScreen = () => {
     setResponse(null);
 
     try {
-      const result = await apiClient.post(ENDPOINTS.LOGIN, {
-        username,
-        password,
-      });
+      // Fetch user data from JSONPlaceholder
+      const result = await apiClient.get(ENDPOINTS.GET_USER(Number(userId)));
+
+      // Simulate authentication
+      const mockToken = `mock-token-${result.data.id}-${Date.now()}`;
 
       setAuth({
         isAuthenticated: true,
-        token: result.data.token,
-        user: result.data.user,
+        token: mockToken,
+        user: {
+          id: result.data.id,
+          username: result.data.username,
+        },
       });
 
       setResponse({
         status: result.status,
         data: {
           message: 'Login successful',
-          user: result.data.user,
+          user: result.data,
+          token: mockToken,
         },
       });
     } catch (error: any) {
@@ -83,7 +87,7 @@ const AuthFlowScreen = () => {
   };
 
   const fetchProtectedData = async () => {
-    if (!auth.token) {
+    if (!auth.user.id) {
       Alert.alert('Error', 'You need to be logged in to access this');
       return;
     }
@@ -92,11 +96,15 @@ const AuthFlowScreen = () => {
     setResponse(null);
 
     try {
-      const result = await apiClient.get(ENDPOINTS.PROTECTED, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
-      });
+      // Fetch user's todos as "protected" data
+      const result = await apiClient.get(
+        ENDPOINTS.GET_USER_TODOS(auth.user.id),
+        {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        }
+      );
 
       setResponse({
         status: result.status,
@@ -123,20 +131,15 @@ const AuthFlowScreen = () => {
 
           {!auth.isAuthenticated ? (
             <View style={styles.authForm}>
+              <Text style={styles.formLabel}>
+                Enter User ID (1-10) to "login" and fetch user data:
+              </Text>
               <TextInput
                 style={styles.input}
-                placeholder="Username"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                editable={!loading}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
+                placeholder="User ID (e.g., 1)"
+                value={userId}
+                onChangeText={setUserId}
+                keyboardType="numeric"
                 editable={!loading}
               />
               <RNButton
@@ -223,6 +226,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
+  },
+  formLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    lineHeight: 20,
   },
   input: {
     borderWidth: 1,

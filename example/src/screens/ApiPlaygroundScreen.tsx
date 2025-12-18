@@ -49,44 +49,89 @@ const ApiPlaygroundScreen = () => {
 
   const requestButtons = [
     {
-      title: 'Basic GET Request',
+      title: 'Get All Posts',
+      description: 'Fetch 100 posts from JSONPlaceholder',
       onPress: () =>
-        makeRequest(() => apiClient.get(ENDPOINTS.GET_POSTS), 'basic-get'),
+        makeRequest(() => apiClient.get(ENDPOINTS.GET_POSTS), 'get-posts'),
     },
     {
-      title: 'Delayed Response (2s)',
+      title: 'Get Single Post',
+      description: 'Fetch a specific post by ID',
+      onPress: () =>
+        makeRequest(() => apiClient.get(ENDPOINTS.GET_POST(1)), 'get-post'),
+    },
+    {
+      title: 'Get All Users',
+      description: 'Fetch all users',
+      onPress: () =>
+        makeRequest(() => apiClient.get(ENDPOINTS.GET_USERS), 'get-users'),
+    },
+    {
+      title: 'Get Comments',
+      description: 'Fetch all comments',
       onPress: () =>
         makeRequest(
-          () => apiClient.get(ENDPOINTS.withDelay(ENDPOINTS.GET_POSTS, 2000)),
-          'delayed-get'
+          () => apiClient.get(ENDPOINTS.GET_COMMENTS),
+          'get-comments'
         ),
     },
     {
-      title: 'Error Response (500)',
+      title: 'Get Todos',
+      description: 'Fetch all todos',
       onPress: () =>
-        makeRequest(
-          () => apiClient.get(ENDPOINTS.withStatus(ENDPOINTS.GET_POSTS, 500)),
-          'error-500'
-        ),
+        makeRequest(() => apiClient.get(ENDPOINTS.GET_TODOS), 'get-todos'),
     },
     {
-      title: 'Large Payload',
+      title: 'Get Photos',
+      description: 'Fetch all photos (large payload)',
       onPress: () =>
-        makeRequest(
-          () => apiClient.get(ENDPOINTS.withLargePayload(ENDPOINTS.GET_POSTS)),
-          'large-payload'
-        ),
+        makeRequest(() => apiClient.get(ENDPOINTS.GET_PHOTOS), 'get-photos'),
     },
     {
-      title: 'POST Request',
+      title: 'Create Post',
+      description: 'POST request to create a new post',
       onPress: () =>
         makeRequest(
           () =>
-            apiClient.post(ENDPOINTS.LOGIN, {
-              username: 'user1',
-              password: 'password',
+            apiClient.post(ENDPOINTS.CREATE_POST, {
+              title: 'New Post',
+              body: 'This is a test post created from the example app',
+              userId: 1,
             }),
-          'post-request'
+          'create-post'
+        ),
+    },
+    {
+      title: 'Update Post',
+      description: 'PUT request to update a post',
+      onPress: () =>
+        makeRequest(
+          () =>
+            apiClient.put(ENDPOINTS.UPDATE_POST(1), {
+              id: 1,
+              title: 'Updated Post',
+              body: 'This post has been updated',
+              userId: 1,
+            }),
+          'update-post'
+        ),
+    },
+    {
+      title: 'Delete Post',
+      description: 'DELETE request to remove a post',
+      onPress: () =>
+        makeRequest(
+          () => apiClient.delete(ENDPOINTS.DELETE_POST(1)),
+          'delete-post'
+        ),
+    },
+    {
+      title: 'Delayed Request (2s)',
+      description: 'Simulated 2 second delay',
+      onPress: () =>
+        makeRequest(
+          () => apiClient.get(ENDPOINTS.GET_POSTS, { delay: 2000 }),
+          'delayed-request'
         ),
     },
   ];
