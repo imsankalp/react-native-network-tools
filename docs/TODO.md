@@ -14,6 +14,7 @@ This checklist will help you complete the development and testing of react-nativ
 - [x] Comprehensive documentation
 - [x] Integration examples
 - [x] Architecture documentation
+- [ ] - Zod custom error creation and handling in UI
 
 ## 📋 Next Steps
 
@@ -69,15 +70,15 @@ This checklist will help you complete the development and testing of react-nativ
   ```typescript
   // In example/src/App.tsx
   import * as NetworkTools from 'react-native-network-tools';
-  
+
   useEffect(() => {
     NetworkTools.enable();
-    
+
     // Make some test requests
     fetch('https://jsonplaceholder.typicode.com/posts/1');
     fetch('https://jsonplaceholder.typicode.com/users/1');
   }, []);
-  
+
   const showRequests = () => {
     const requests = NetworkTools.getAllRequests();
     console.log('Captured requests:', requests);
