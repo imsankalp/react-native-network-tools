@@ -4,7 +4,8 @@ export const colors = {
   success: '#4CAF50', // Success state
   warning: '#FFC107', // Warning state
   error: '#F44336', // Error state
-  background: '#FFFFFF', // Main background
+  background: '#1E1E1E', // Main background
+  surfaceBg: '#121212', // Surface background
   grey0: '#F8F9FA', // Lightest grey (replacing surface)
   grey1: '#E9ECEF', // Light grey
   grey2: '#DEE2E6', // Border color
@@ -97,17 +98,17 @@ export const spacing = {
 export const typography = {
   h1: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: '600' as const,
     lineHeight: 40,
   },
   h2: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     lineHeight: 32,
   },
   h3: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     lineHeight: 28,
   },
   body: {
