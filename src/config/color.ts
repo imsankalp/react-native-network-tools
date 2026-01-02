@@ -1,0 +1,32 @@
+export const colors = {
+  primary: '#4A6FA5',
+  secondary: '#6B4E90',
+  success: '#4CAF50',
+  warning: '#FFC107',
+  error: '#F44336',
+  background: '#1E1E1E',
+  surfaceBg: '#121212',
+  grey0: '#F8F9FA',
+  grey1: '#E9ECEF',
+  grey2: '#DEE2E6',
+  grey3: '#ADB5BD',
+  grey4: '#6C757D',
+  grey5: '#495057',
+  greyOutline: '#CED4DA',
+  searchBg: '#F1F3F5',
+  white: '#FFFFFF',
+  black: '#212529',
+  transparent: 'transparent',
+} as const;
+
+export const httpMethodColors = {
+  GET: { backgroundColor: '#1B5E20', textColor: '#A5D6A7' },
+  POST: { backgroundColor: '#0D47A1', textColor: '#90CAF9' },
+  PUT: { backgroundColor: '#E65100', textColor: '#FFCC80' },
+  PATCH: { backgroundColor: '#4A148C', textColor: '#CE93D8' },
+  DELETE: { backgroundColor: '#B71C1C', textColor: '#EF9A9A' },
+  HEAD: { backgroundColor: '#006064', textColor: '#80DEEA' },
+  OPTIONS: { backgroundColor: '#33691E', textColor: '#C5E1A5' },
+  CONNECT: { backgroundColor: '#1A237E', textColor: '#9FA8DA' },
+  TRACE: { backgroundColor: '#880E4F', textColor: '#F48FB1' },
+} as const;
