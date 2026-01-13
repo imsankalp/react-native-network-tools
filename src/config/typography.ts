@@ -24,5 +24,6 @@ export const typography = {
     fontSize: 14,
     lineHeight: 20,
     color: colors.grey4,
+    fontWeight: 'medium' as const,
   },
 };
