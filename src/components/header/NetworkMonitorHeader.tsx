@@ -1,6 +1,7 @@
 import { StyleSheet, View, TouchableOpacity, Text, Image } from 'react-native';
-import { colors, typography } from '../../../example/src/theme';
 import type { NetowrkMonitorHeaderProp } from './types';
+import { typography } from '../../config/typography';
+import { colors } from '../../config/color';
 
 const NetworkMonitorHeader = (props: NetowrkMonitorHeaderProp) => {
   const { title, closePresshandler } = props;
