@@ -54,6 +54,8 @@ class NetworkToolsInterceptor : Interceptor {
       )
 
       NetworkRequestStorage.addRequest(networkRequest)
+      NetworkToolsEventEmitter.emitNetworkRequest(networkRequest)
+
 
       return response
     } catch (e: Exception) {
@@ -78,6 +80,7 @@ class NetworkToolsInterceptor : Interceptor {
       )
 
       NetworkRequestStorage.addRequest(networkRequest)
+      NetworkToolsEventEmitter.emitNetworkRequest(networkRequest)
 
       throw e
     }

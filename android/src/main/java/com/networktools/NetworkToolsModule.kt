@@ -2,12 +2,24 @@ package com.networktools
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
+import com.networktools.interceptor.NetworkToolsEventEmitter
 import com.networktools.storage.NetworkRequestStorage
 import org.json.JSONArray
 
 @ReactModule(name = NetworkToolsModule.NAME)
 class NetworkToolsModule(reactContext: ReactApplicationContext) :
   NativeNetworkToolsSpec(reactContext) {
+
+  init {
+    // Initialize the event emitter with the React context
+    NetworkToolsEventEmitter.initialize(reactContext)
+  }
+
+  // IMPORTANT: Add this method to support event emission
+  override fun canOverrideExistingModule(): Boolean {
+    return true
+  }
+
 
   override fun getName(): String {
     return NAME
@@ -45,6 +57,14 @@ class NetworkToolsModule(reactContext: ReactApplicationContext) :
 
   override fun getRequestCount(): Double {
     return NetworkRequestStorage.getCount().toDouble()
+  }
+
+  override fun addListener(eventType: String?) {
+
+  }
+
+  override fun removeListeners(count: Double) {
+
   }
 
   companion object {
