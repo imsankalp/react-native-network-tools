@@ -11,6 +11,8 @@ A powerful React Native library that allows you to track and inspect all network
 - 🔒 **Thread-Safe**: Built with concurrent data structures for reliability
 - ⚡ **Easy Integration**: Simple API with minimal setup required
 
+![](Screen_recording_20260204_002905.mp4)
+
 ## Installation
 
 ```sh
