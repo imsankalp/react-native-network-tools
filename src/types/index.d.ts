@@ -31,9 +31,6 @@ export interface ReportErrorPropType {
 }
 
 export interface NetworkToolsType {
-  enable: () => void;
-  disable: () => void;
-  isEnabled: () => boolean;
   getAllRequests: () => NetworkRequest[];
   getRequestById: (id: string) => NetworkRequest | null;
   clearAllRequests: () => void;
@@ -42,7 +39,6 @@ export interface NetworkToolsType {
 
 export interface NetworkToolsProviderProps {
   children: React.ReactNode;
-  enabled?: boolean;
   onError?: (error: Error, context?: Record<string, any>) => void;
 }
 
@@ -53,7 +49,6 @@ export interface NetworkLoggerOverlayProps {
 }
 
 export interface UseNetworkLoggerOptions {
-  enabled?: boolean;
   maxRequests?: number;
 }
 
@@ -62,21 +57,6 @@ export interface UseNetworkLoggerResult {
   clear: () => void;
   getRequest: (id: string) => NetworkRequest | null;
   getRequestCount: () => number;
-}
-
-export interface NetworkLogEntry {
-  id: string;
-  url: string;
-  method: string;
-  requestHeaders: Record<string, string>;
-  requestBody: string;
-  requestTime: number;
-  responseCode: number;
-  responseHeaders: Record<string, string>;
-  responseBody: string;
-  responseTime: number;
-  duration: number;
-  error: string;
 }
 
 export * from './reanimated'; // If you have Reanimated specific types

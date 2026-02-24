@@ -9,7 +9,6 @@ This document explains the architecture and design decisions of the react-native
 │                     React Native Layer                       │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  TypeScript API (src/index.tsx)                      │  │
-│  │  - enable(), disable(), isEnabled()                  │  │
 │  │  - getAllRequests(), getRequestById()                │  │
 │  │  - clearAllRequests(), getRequestCount()             │  │
 │  └──────────────────────────────────────────────────────┘  │

@@ -1,173 +1,426 @@
-import React, { useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  ScrollView,
+  Animated,
   StyleSheet,
   View,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
+  ScrollView,
+  Dimensions,
+  FlatList,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { colors, spacing, typography } from '../../../example/src/theme';
-import { type NetworkLogEntry } from '../../types';
-import { parseUrlDetails } from '../../util/parseURLDetails';
+import { colors } from '../../config/color';
+import { spacing } from '../../config/spacing';
+import { typography } from '../../config/typography';
+import type { NetworkRequest } from '../../context/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { NetworkDetailProps, TabType } from './types';
+import { networkDetailsTab } from './networkDetails.config';
 
-interface NetworkDetailProps {
-  request: NetworkLogEntry | null;
-  onClose: () => void;
-}
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const NetworkDetail: React.FC<NetworkDetailProps> = ({
   request,
   onClose,
 }) => {
-  const HORIZONTAL_PADDING = 16;
-  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const slideAnim = React.useRef(new Animated.Value(SCREEN_WIDTH)).current;
+
   const { top: STATUS_BAR_PADDING_TOP } = useSafeAreaInsets();
-  const WIDTH = SCREEN_WIDTH - 2 * HORIZONTAL_PADDING;
 
-  const formattedTime = useMemo(() => {
-    if (!request?.requestTime) return 'N/A';
-    return new Date(request.requestTime).toLocaleString();
-  }, [request?.requestTime]);
+  React.useEffect(() => {
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      damping: 15,
+      stiffness: 100,
+      useNativeDriver: true,
+    }).start();
+  }, [slideAnim]);
 
-  const renderSection = (title: string, content: string | object) => {
-    let contentString: string = '';
-    if (typeof content === 'object') {
-      try {
-        contentString = JSON.stringify(content, null, 2);
-      } catch {
-        contentString = 'Unable to parse content';
-      }
-    }
+  const animatedStyle = {
+    transform: [{ translateX: slideAnim }],
+  };
 
+  const handleClose = useCallback(() => {
+    Animated.spring(slideAnim, {
+      toValue: SCREEN_WIDTH,
+      damping: 15,
+      stiffness: 100,
+      useNativeDriver: true,
+    }).start();
+    setTimeout(onClose, 300);
+  }, [onClose, slideAnim]);
+
+  const renderTabItems = ({
+    item: tab,
+  }: {
+    item: { key: TabType; label: string };
+  }) => {
     return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <ScrollView
-          style={styles.contentBox}
-          nestedScrollEnabled
-          showsVerticalScrollIndicator={false}
+      <TouchableOpacity
+        key={tab.key}
+        onPress={() => setActiveTab(tab.key)}
+        style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+      >
+        <Text
+          style={[
+            styles.tabText,
+            activeTab === tab.key && styles.activeTabText,
+          ]}
         >
-          <Text style={styles.contentText} selectable>
-            {contentString || 'No data'}
-          </Text>
-        </ScrollView>
-      </View>
+          {tab.label}
+        </Text>
+      </TouchableOpacity>
     );
   };
 
-  if (!request) return null;
-
   return (
+    // <>
+    //   <TouchableOpacity
+    //     style={styles.backdrop}
+    //     activeOpacity={0.3}
+    //     onPress={handleClose}
+    //   />
+
     <Animated.View
-      entering={FadeIn.duration(200)}
-      exiting={FadeOut.duration(200)}
-      // @ts-ignore // Reanimated types are sometimes buggy
-      style={[styles.container, { width: WIDTH, top: STATUS_BAR_PADDING_TOP }]}
+      style={[styles.container, { top: STATUS_BAR_PADDING_TOP }, animatedStyle]}
     >
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Network Request Details</Text>
-        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeButtonText}>✕</Text>
+        <TouchableOpacity onPress={handleClose} style={styles.backButton}>
+          <Text style={styles.backButtonText}>➔</Text>
         </TouchableOpacity>
+        <Text style={styles.title} numberOfLines={1}>
+          Request Details
+        </Text>
+        <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderSection('Endpoint', request.url)}
-        {renderSection('Method', request.method || 'N/A')}
-        {renderSection('Status', request.responseCode.toString() || 'N/A')}
-        {renderSection('Time', formattedTime)}
-        {renderSection('Duration', `${request.duration || 0}ms`)}
-
-        {parseUrlDetails(request.url).isQueryParamsPresent
-          ? Object.keys(parseUrlDetails(request.url).queryParams).length > 0 &&
-            renderSection(
-              'Query Params',
-              parseUrlDetails(request.url).queryParams
-            )
-          : null}
-
-        {request.requestHeaders &&
-          renderSection('Request Headers', request.requestHeaders)}
-
-        {request.requestBody &&
-          renderSection('Request Body', request.requestBody)}
-
-        {request.responseHeaders &&
-          renderSection('Response Headers', request.responseHeaders)}
-
-        {request.responseBody &&
-          renderSection('Response Body', request.responseBody)}
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <FlatList
+          data={networkDetailsTab}
+          keyExtractor={(item) => item.key}
+          renderItem={renderTabItems}
+          horizontal
+        />
+      </View>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === 'overview' && <OverviewTab request={request} />}
+        {activeTab === 'request' && <RequestTab request={request} />}
+        {activeTab === 'response' && <ResponseTab request={request} />}
+        {activeTab === 'timing' && <TimingTab request={request} />}
       </ScrollView>
     </Animated.View>
+    // </>
+  );
+};
+
+// Overview Tab Component
+const OverviewTab: React.FC<{ request: NetworkRequest }> = ({ request }) => {
+  const duration = request.responseTime
+    ? new Date(request.responseTime).getTime() -
+      new Date(request.requestTime).getTime()
+    : 0;
+
+  return (
+    <View style={styles.tabContent}>
+      <DetailRow label="URL" value={request.url} />
+      <DetailRow label="Method" value={request.method} />
+      <DetailRow
+        label="Status"
+        value={`${request.responseCode || '-'}`}
+        valueColor={
+          request.responseCode && request.responseCode >= 400
+            ? colors.error
+            : colors.success
+        }
+      />
+      {request.customError && (
+        <>
+          <DetailRow
+            label="Custom Error"
+            value={request.customError.message}
+            valueColor={colors.error}
+          />
+          <DetailRow
+            label="Error Type"
+            value={request.customError.type}
+            valueColor={colors.error}
+          />
+          {request.customError.code && (
+            <DetailRow
+              label="Error Code"
+              value={request.customError.code}
+              valueColor={colors.error}
+            />
+          )}
+        </>
+      )}
+      <DetailRow label="Duration" value={`${duration}ms`} />
+      <DetailRow
+        label="Request Time"
+        value={new Date(request.requestTime).toLocaleString()}
+      />
+    </View>
+  );
+};
+
+// Request Tab Component
+const RequestTab: React.FC<{ request: NetworkRequest }> = ({ request }) => {
+  return (
+    <View style={styles.tabContent}>
+      <SectionTitle title="Headers" />
+      <DataBox data={request.requestHeaders || {}} placeholder="No headers" />
+      <SectionTitle title="Body" />
+      <DataBox data={request.requestData || {}} placeholder="No body" />
+    </View>
+  );
+};
+
+// Response Tab Component
+const ResponseTab: React.FC<{ request: NetworkRequest }> = ({ request }) => {
+  const responseData =
+    typeof request.responseData === 'string'
+      ? safeJsonParse(request.responseData)
+      : request.responseData;
+
+  return (
+    <View style={styles.tabContent}>
+      <SectionTitle title="Headers" />
+      <DataBox data={request.responseHeaders || {}} placeholder="No headers" />
+      <SectionTitle title="Body" />
+      <DataBox data={responseData || {}} placeholder="No body" />
+      {request.customError && (
+        <>
+          <SectionTitle title="Custom Error Details" />
+          <DataBox
+            data={request.customError.details ?? {}}
+            placeholder="No details"
+          />
+        </>
+      )}
+    </View>
+  );
+};
+
+// Timing Tab Component
+const TimingTab: React.FC<{ request: NetworkRequest }> = ({ request }) => {
+  const duration = request.responseTime
+    ? new Date(request.responseTime).getTime() -
+      new Date(request.requestTime).getTime()
+    : 0;
+
+  return (
+    <View style={styles.tabContent}>
+      <DetailRow
+        label="Started At"
+        value={new Date(request.requestTime).toLocaleTimeString()}
+      />
+      <DetailRow
+        label="Completed At"
+        value={new Date(
+          request.responseTime || request.requestTime
+        ).toLocaleTimeString()}
+      />
+      <DetailRow label="Total Duration" value={`${duration}ms`} />
+      <View style={styles.timingBar}>
+        <View
+          style={[
+            styles.timingFill,
+            { width: Math.min(100, (duration / 5000) * 100) + '%' },
+          ]}
+        />
+      </View>
+    </View>
+  );
+};
+
+// Reusable Components
+const DetailRow: React.FC<{
+  label: string;
+  value: string;
+  valueColor?: string;
+}> = ({ label, value, valueColor }) => (
+  <View style={styles.detailRow}>
+    <Text style={styles.detailLabel}>{label}</Text>
+    <Text
+      style={[styles.detailValue, { color: valueColor || colors.white }]}
+      numberOfLines={3}
+    >
+      {value}
+    </Text>
+  </View>
+);
+
+const SectionTitle: React.FC<{ title: string }> = ({ title }) => (
+  <Text style={styles.sectionTitle}>{title}</Text>
+);
+
+const safeJsonParse = (value: string): unknown => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const DataBox: React.FC<{ data: any; placeholder: string }> = ({
+  data,
+  placeholder,
+}) => {
+  const isEmpty = !data || Object.keys(data).length === 0;
+
+  return (
+    <View style={styles.dataBox}>
+      {isEmpty ? (
+        <Text style={styles.placeholderText}>{placeholder}</Text>
+      ) : (
+        <Text style={styles.dataText}>{JSON.stringify(data, null, 2)}</Text>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  backdrop: {
+    // position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 99999,
+  },
   container: {
-    flex: 1,
-    backgroundColor: colors.surfaceBg,
     position: 'absolute',
-    alignSelf: 'center',
+    right: 0,
+    top: 0,
+    width: SCREEN_WIDTH * 0.9,
+    height: SCREEN_HEIGHT,
+    backgroundColor: colors.background,
+    zIndex: 99999,
+    flexDirection: 'column',
     elevation: 5,
-    zIndex: 9999,
-    borderRadius: 30,
-    paddingHorizontal: 16,
-
-    overflow: 'hidden', // Important for borderRadius animation
+    shadowColor: colors.grey5,
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    borderTopLeftRadius: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.greyOutline,
     backgroundColor: colors.background,
   },
+  backButton: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  backButtonText: {
+    ...typography.body,
+    color: colors.primary,
+    fontWeight: '600',
+  },
   title: {
     ...typography.h3,
     color: colors.white,
-  },
-  closeButton: {
-    padding: spacing.xs,
-  },
-  closeButtonText: {
-    ...typography.h3,
-    color: colors.white,
-  },
-  scrollView: {
     flex: 1,
+    textAlign: 'center',
   },
-  scrollContent: {
-    paddingTop: spacing.md,
-    flexGrow: 1,
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.greyOutline,
+    backgroundColor: colors.background,
   },
-  section: {
+  tab: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    marginRight: spacing.md,
+    zIndex: 99999,
+  },
+  activeTab: {
+    borderBottomWidth: 3.2,
+    borderBottomColor: colors.primary,
+  },
+  tabText: {
+    ...typography.body,
+    color: colors.grey3,
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  content: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  tabContent: {
+    padding: spacing.md,
+  },
+  detailRow: {
     marginBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.greyOutline,
+  },
+  detailLabel: {
+    ...typography.caption,
+    color: colors.grey3,
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
+  detailValue: {
+    ...typography.body,
+    color: colors.white,
+    lineHeight: 20,
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.grey0,
-    marginBottom: spacing.xs,
+    color: colors.primary,
+    marginBottom: spacing.md,
+    marginTop: spacing.lg,
   },
-  contentBox: {
+  dataBox: {
     backgroundColor: colors.grey5,
     borderRadius: 8,
     padding: spacing.md,
-    maxHeight: 200,
+    marginBottom: spacing.lg,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
   },
-  contentText: {
+  dataText: {
     ...typography.body,
-    color: colors.surfaceBg,
-    fontSize: 12,
-    fontFamily: 'Menlo', // Monospace for better code display
+    color: colors.white,
+    fontSize: 11,
+    fontFamily: 'Menlo',
+    lineHeight: 16,
+  },
+  placeholderText: {
+    ...typography.body,
+    color: colors.grey3,
+    fontStyle: 'italic',
+  },
+  timingBar: {
+    height: 8,
+    backgroundColor: colors.grey5,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginVertical: spacing.md,
+  },
+  timingFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 4,
   },
 });

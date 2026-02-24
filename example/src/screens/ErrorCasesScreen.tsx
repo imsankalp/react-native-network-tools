@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { apiClient } from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import { RNButton } from '../components/button/RNButton';
+import { useNetworkMonitor } from 'react-native-network-tools';
 
 interface ErrorCase {
   title: string;
@@ -18,6 +19,7 @@ const ErrorCasesScreen = () => {
     data?: any;
     error?: string;
   } | null>(null);
+  const { annotateRequestError } = useNetworkMonitor();
 
   const handleError = (error: any, type: string) => {
     setResponse({
@@ -25,6 +27,12 @@ const ErrorCasesScreen = () => {
       status: error.response?.status,
       error: error.message,
       data: error.response?.data,
+    });
+    annotateRequestError({
+      method: 'GET',
+      url: 'http://thisurldoesnotexist.xyz',
+      message: 'This is custom error',
+      type: 'http',
     });
   };
 

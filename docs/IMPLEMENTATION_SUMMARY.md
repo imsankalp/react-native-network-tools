@@ -119,9 +119,6 @@ A complete React Native library for tracking network requests in Android apps us
 - Error handling and fallbacks
 
 ### 5. Public API
-- `enable()` - Enable network tracking
-- `disable()` - Disable network tracking
-- `isEnabled()` - Check if tracking is enabled
 - `getAllRequests()` - Get all captured requests
 - `getRequestById(id)` - Get specific request
 - `clearAllRequests()` - Clear all stored requests
@@ -177,9 +174,17 @@ Application Code
    NetworkToolsManager.addInterceptor(builder)
    ```
 
-3. **Enable in app**
+3. **Wrap your app with NetworkMonitorProvider**
    ```typescript
-   NetworkTools.enable();
+   import { NetworkMonitorProvider } from 'react-native-network-tools';
+   
+   function App() {
+     return (
+       <NetworkMonitorProvider>
+         {/* Your app */}
+       </NetworkMonitorProvider>
+     );
+   }
    ```
 
 4. **View requests**
@@ -286,8 +291,15 @@ The architecture supports easy addition of:
 ```typescript
 import * as NetworkTools from 'react-native-network-tools';
 
-// Enable tracking
-NetworkTools.enable();
+import { NetworkMonitorProvider } from 'react-native-network-tools';
+
+function App() {
+  return (
+    <NetworkMonitorProvider>
+      {/* Your app */}
+    </NetworkMonitorProvider>
+  );
+}
 
 // Make requests (automatically tracked)
 fetch('https://api.example.com/users');

@@ -2,11 +2,10 @@ import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
-  FlatList,
   Dimensions,
   Image,
   Text,
-  Button,
+  TouchableOpacity,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -16,19 +15,24 @@ import Animated, {
   runOnJS,
   interpolate,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import NetworkRequest from 'react-native-network-tools';
+import {
+  Gesture,
+  GestureDetector,
+  FlatList,
+} from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing } from '../../../example/src/theme';
+import { useNetworkMonitor } from '../../context/NetworkMonitorContext';
 import NetworkMonitorHeader from '../header/NetworkMonitorHeader';
-import type { NetworkLogEntry } from '../../types';
+import type { NetworkRequest } from '../../context/types';
 import { NetworkDetail } from '../request-detail/NetworkDetails';
-import { TouchableOpacity } from 'react-native';
+import { colors } from '../../config/color';
+import { spacing } from '../../config/spacing';
+import type { ViewStyle } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUTTON_SIZE = 60;
-const HORIZONTAL_PADDING = 16;
-const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.95;
+const HORIZONTAL_PADDING = 0;
+const EXPANDED_HEIGHT = SCREEN_HEIGHT;
 const EXPANDED_WIDTH = SCREEN_WIDTH - 2 * HORIZONTAL_PADDING;
 
 type Position = {
@@ -40,23 +44,19 @@ interface FloatingNetworkMonitorProps {
   onPress?: () => void;
   onClose?: () => void;
   isExpanded?: boolean;
-  isEnabled?: boolean;
 }
 
 const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
   onPress,
   onClose,
   isExpanded = false,
-  isEnabled = false,
 }) => {
   const { top: STATUS_BAR_PADDING_TOP } = useSafeAreaInsets();
-
+  const { requests, clearRequests } = useNetworkMonitor();
   const [contentVisible, setContentVisible] = useState(isExpanded);
-  const [selectedRequest, setSelectedRequest] =
-    useState<NetworkLogEntry | null>(null);
-  const [requestList, setRequestList] = useState<NetworkLogEntry[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<NetworkRequest>();
 
-  const handleRequestPress = (request: NetworkLogEntry) => {
+  const handleRequestPress = (request: NetworkRequest) => {
     setSelectedRequest(request);
   };
 
@@ -67,13 +67,12 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
   const collapsedPosition = useSharedValue<Position>({
     x: SCREEN_WIDTH - BUTTON_SIZE - 20,
     y: 50,
-  }); // Store position before expanding
+  });
   const expandedSV = useSharedValue(isExpanded ? 1 : 0);
   const offset = useSharedValue({ x: 0, y: 0 });
   const scale = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    // Interpolate values based on expandedSV (0 -> 1)
+  const animatedStyle = useAnimatedStyle((): ViewStyle => {
     const width = interpolate(
       expandedSV.value,
       [0, 1],
@@ -102,10 +101,8 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
     };
   });
 
-  // 2. Pan Gesture
   const panGesture = Gesture.Pan()
     .onStart(() => {
-      // Only allow dragging if collapsed
       if (expandedSV.value === 0) {
         offset.value = {
           x: position.value.x,
@@ -136,7 +133,6 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
     })
     .onEnd(() => {
       if (expandedSV.value === 0) {
-        // Snap to nearest edge
         const snapX =
           position.value.x < SCREEN_WIDTH / 2
             ? 20
@@ -150,22 +146,17 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
       }
     });
 
-  // 3. Tap Gesture
   const tapGesture = Gesture.Tap().onEnd(() => {
-    // Only handle tap when not expanded
     if (expandedSV.value < 0.5) {
-      // Using a threshold since it's an animated value
-      const nextState = 1; // Always expand on tap
+      const nextState = 1;
 
-      // Toggle Shared Value
       expandedSV.value = withSpring(nextState, { damping: 15, stiffness: 100 });
 
-      // EXPAND: Save collapsed position before expanding
       collapsedPosition.value = {
         x: position.value.x,
         y: position.value.y,
       };
-      // Center the view
+
       position.value = withSpring(
         {
           x: (SCREEN_WIDTH - EXPANDED_WIDTH) / 2,
@@ -178,10 +169,8 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
     }
   });
 
-  // Combine gestures
   const gesture = Gesture.Race(panGesture, tapGesture) as any;
 
-  // Handle manual close from inside the expanded view
   const handleClosePress = useCallback(() => {
     expandedSV.value = 0;
     position.value = withSpring(
@@ -198,21 +187,59 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
   const renderListHeader = useCallback(
     () => (
       <NetworkMonitorHeader
-        title="Network Monitor"
+        title={`Network Monitor`}
         closePresshandler={handleClosePress}
+        onClear={clearRequests}
       />
     ),
-    [handleClosePress]
+    [handleClosePress, clearRequests]
+  );
+  const renderFooterComponent = useCallback(
+    () => <View style={styles.footerStyle} />,
+    []
   );
 
-  if (isEnabled === false) return null;
-  console.log('requestList', requestList?.length);
+  const renderRequestItem = useCallback(
+    ({ item }: { item: NetworkRequest }) => {
+      console.log('item', JSON.stringify(item, null, 2));
+      return (
+        <TouchableOpacity
+          style={styles.requestItem}
+          onPress={() => handleRequestPress(item)}
+        >
+          <View style={styles.requestHeader}>
+            <Text style={styles.methodText}>{item.method}</Text>
+            <Text
+              style={[
+                styles.statusText,
+                {
+                  color:
+                    item.responseCode >= 400 ? colors.error : colors.success,
+                },
+              ]}
+            >
+              {item.responseCode || '-'}
+            </Text>
+          </View>
+          <Text style={styles.urlText} numberOfLines={2}>
+            {item.url}
+          </Text>
+          <Text style={styles.timestampText}>
+            {new Date(item.requestTime).toLocaleTimeString()}
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+    []
+  );
+
+  const keyExtractor = useCallback((item: NetworkRequest) => item.id, []);
 
   return (
     <>
       <GestureDetector gesture={gesture}>
         <Animated.View
-          // @ts-ignore // Reanimated types are sometimes buggy
+          // @ts-ignore Some error to be fixed later
           style={[
             styles.container,
             animatedStyle,
@@ -228,32 +255,22 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
             </View>
           ) : (
             <View style={styles.expandedContent}>
-              <Button
-                title="Press Me"
-                onPress={() => {
-                  const listString = NetworkRequest.getAllRequests();
-                  const listData = JSON.parse(listString);
-
-                  setRequestList((prevState) => [...prevState, ...listData]);
-                }}
-              />
+              {renderListHeader()}
               <FlatList
-                data={requestList}
-                keyExtractor={(item) => item.id}
-                style={{ flex: 1 }}
-                contentContainerStyle={{ flexGrow: 1 }}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={{
-                      width: '100%',
-                      height: 45,
-                    }}
-                    onPress={() => handleRequestPress(item)}
-                  >
-                    <Text style={{ color: colors.white }}>{item.url}</Text>
-                  </TouchableOpacity>
-                )}
-                ListHeaderComponent={renderListHeader}
+                data={requests}
+                keyExtractor={keyExtractor}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                renderItem={renderRequestItem}
+                ListFooterComponent={renderFooterComponent}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      No network requests yet
+                    </Text>
+                  </View>
+                }
               />
             </View>
           )}
@@ -262,7 +279,7 @@ const FloatingNetworkMonitor: React.FC<FloatingNetworkMonitorProps> = ({
       {selectedRequest && (
         <NetworkDetail
           request={selectedRequest}
-          onClose={() => setSelectedRequest(null)}
+          onClose={() => setSelectedRequest(undefined)}
         />
       )}
     </>
@@ -273,16 +290,16 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     paddingHorizontal: 16,
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
+    // position: 'absolute',
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    elevation: 3,
     shadowColor: colors.grey5,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 9999,
-    overflow: 'hidden', // Important for borderRadius animation
+    zIndex: 999,
+    overflow: 'hidden',
   },
   button: {
     width: '100%',
@@ -291,22 +308,79 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 4,
   },
-  buttonText: {
-    fontSize: 24,
-  },
-  expandedContent: {
-    flex: 1,
-    width: '100%',
-    paddingTop: spacing.lg,
-  },
-  content: {
-    flex: 1,
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholder: {
-    color: colors.grey1,
+  badgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  expandedContent: {
+    flex: 1,
+    flexGrow: 1,
+    width: '100%',
+    paddingTop: spacing.lg,
+  },
+  list: {
+    flex: 1,
+    flexGrow: 1,
+  },
+  listContent: {
+    flexGrow: 1,
+  },
+  requestItem: {
+    backgroundColor: colors.grey5,
+    padding: spacing.md,
+    marginVertical: spacing.xs,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  requestHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  methodText: {
+    color: colors.primary,
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  statusText: {
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  urlText: {
+    color: colors.white,
+    fontSize: 14,
+    marginBottom: spacing.xs,
+  },
+  timestampText: {
+    color: colors.grey3,
+    fontSize: 10,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  emptyText: {
+    color: colors.grey3,
     textAlign: 'center',
+    fontSize: 16,
+  },
+  footerStyle: {
+    height: spacing.xxl,
   },
 });
 

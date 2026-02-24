@@ -25,18 +25,6 @@ class NetworkToolsModule(reactContext: ReactApplicationContext) :
     return NAME
   }
 
-  override fun enable() {
-    NetworkToolsManager.enable()
-  }
-
-  override fun disable() {
-    NetworkToolsManager.disable()
-  }
-
-  override fun isEnabled(): Boolean {
-    return NetworkToolsManager.isEnabled()
-  }
-
   override fun getAllRequests(): String {
     val requests = NetworkRequestStorage.getAllRequests()
     val jsonArray = JSONArray()
