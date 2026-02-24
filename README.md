@@ -50,18 +50,20 @@ class MainApplication : Application(), ReactApplication {
 }
 ```
 
-### 2. Enable Tracking in Your App
+### 2. Wrap Your App with NetworkMonitorProvider
 
 ```typescript
-import { useEffect } from 'react';
-import * as NetworkTools from 'react-native-network-tools';
+import { NetworkMonitorProvider } from 'react-native-network-tools';
 
 function App() {
-  useEffect(() => {
-    NetworkTools.enable();
-  }, []);
-
-  // Your app code
+  return (
+    <NetworkMonitorProvider
+      maxRequests={1000}
+      showFloatingMonitor={true}
+    >
+      {/* Your app code */}
+    </NetworkMonitorProvider>
+  );
 }
 ```
 
@@ -84,15 +86,6 @@ const count = NetworkTools.getRequestCount();
 ```
 
 ## API Reference
-
-### `enable(): void`
-Enable network request tracking. Only works in debug builds.
-
-### `disable(): void`
-Disable network request tracking.
-
-### `isEnabled(): boolean`
-Check if network tracking is currently enabled.
 
 ### `getAllRequests(): NetworkRequest[]`
 Get all captured network requests.

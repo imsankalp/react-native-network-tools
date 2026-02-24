@@ -4,166 +4,125 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  type ReactNode,
+  useRef,
+  useMemo,
 } from 'react';
-import {
-  View,
-  StyleSheet,
-  NativeEventEmitter,
-  NativeModules,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, NativeEventEmitter, Platform } from 'react-native';
 import FloatingNetworkMonitor from '../components/floating-network-monitor';
-
-const { NetworkTools } = NativeModules;
-
-type NetworkRequest = {
-  id: string;
-  url: string;
-  method: string;
-  status: number;
-  requestHeaders: Record<string, string>;
-  responseHeaders: Record<string, string>;
-  requestData?: any;
-  responseData?: any;
-  timestamp: number;
-  duration: number;
-  error?: string;
-};
-
-type NetworkMonitorContextType = {
-  isEnabled: boolean;
-  requests: NetworkRequest[];
-  enable: () => void;
-  disable: () => void;
-  addRequest: (
-    request: Omit<NetworkRequest, 'id' | 'timestamp' | 'duration'>
-  ) => void;
-  clearRequests: () => void;
-};
+import NetworkTools from '../NativeNetworkTools';
+import { networkStore } from '../store/NetworkStore';
+import type {
+  AnnotateNetworkRequestErrorInput,
+  NetworkMonitorContextType,
+  NetworkMonitorProviderProps,
+  NetworkRequest,
+} from './types';
 
 const NetworkMonitorContext = createContext<
   NetworkMonitorContextType | undefined
 >(undefined);
 
-interface NetworkMonitorProviderProps {
-  children: ReactNode;
-  enabledByDefault?: boolean;
-}
+const NETWORK_EVENT_NAME = 'NetworkTools:onRequest';
 
 export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   children,
-  enabledByDefault = false,
+  maxRequests = 1000,
+  showFloatingMonitor = true,
 }) => {
-  const [isEnabled, setIsEnabled] = useState(
-    NetworkTools?.isEnabled?.() ?? enabledByDefault
-  );
   const [requests, setRequests] = useState<NetworkRequest[]>([]);
+  const emitterRef = useRef<NativeEventEmitter | null>(null);
 
-  const enable = useCallback(() => {
-    if (NetworkTools?.enable) {
-      NetworkTools.enable();
-    }
-    setIsEnabled(true);
+  // Configure store max requests
+  useEffect(() => {
+    networkStore.setMaxRequests(maxRequests);
+  }, [maxRequests]);
+
+  // Subscribe to store changes
+  useEffect(() => {
+    const unsubscribe = networkStore.subscribe((updatedRequests) => {
+      setRequests(updatedRequests);
+    });
+
+    return unsubscribe;
   }, []);
 
-  const disable = useCallback(() => {
-    if (NetworkTools?.disable) {
-      NetworkTools.disable();
-    }
-    setIsEnabled(false);
+  const addRequest = useCallback((request: NetworkRequest) => {
+    networkStore.add(request);
   }, []);
 
-  const addRequest = useCallback(
-    (request: Omit<NetworkRequest, 'id' | 'timestamp' | 'duration'>) => {
-      const id = Math.random().toString(36).substring(2, 9);
-      const timestamp = Date.now();
+  const clearRequests = useCallback(() => {
+    networkStore.clear();
+    if (NetworkTools?.clearAllRequests) {
+      NetworkTools.clearAllRequests();
+    }
+  }, []);
 
-      setRequests((prev) =>
-        [
-          {
-            ...request,
-            id,
-            timestamp,
-            duration: 0, // Will be updated when response is received
-          },
-          ...prev,
-        ].slice(0, 1000)
-      ); // Limit to 1000 most recent requests
+  const getRequestById = useCallback((id: string): NetworkRequest | null => {
+    return networkStore.getById(id);
+  }, []);
+
+  const annotateRequestError = useCallback(
+    (input: AnnotateNetworkRequestErrorInput): string | null => {
+      return networkStore.annotateRequestError(input);
     },
     []
   );
 
-  // const updateRequest = useCallback((id: string, updates: Partial<NetworkRequest>) => {
-  //   setRequests(prev =>
-  //     prev.map(req =>
-  //       req.id === id ? { ...req, ...updates } : req
-  //     )
-  //   );
-  const clearRequests = useCallback(() => {
-    setRequests([]);
-  }, []);
-
-  // Sync with native module on mount
+  // Initialize event emitter and listeners
   useEffect(() => {
-    if (Platform.OS === 'ios' || !NetworkTools) return undefined;
+    if (!NetworkTools || Platform.OS === 'web') return;
 
-    // Set initial state from native
-    if (typeof NetworkTools.isEnabled === 'function') {
-      const nativeEnabled = NetworkTools.isEnabled();
-      if (nativeEnabled !== isEnabled) {
-        setIsEnabled(nativeEnabled);
+    // Initialize emitter
+    emitterRef.current = new NativeEventEmitter(NetworkTools);
+
+    // Load existing requests from native
+    if (typeof NetworkTools.getAllRequests === 'function') {
+      try {
+        const existingRequestsJson = NetworkTools.getAllRequests();
+        if (existingRequestsJson) {
+          const existingRequests = JSON.parse(existingRequestsJson);
+          if (Array.isArray(existingRequests) && existingRequests.length > 0) {
+            networkStore.loadInitialData(existingRequests);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load existing network requests:', error);
       }
     }
 
-    // Listen for native state changes
-    const eventEmitter = new NativeEventEmitter(NetworkTools);
-    const subscription = eventEmitter.addListener(
-      'onNetworkLoggingStateChanged',
-      (event: unknown) => {
-        // Safely check if the event has the expected shape
-        if (
-          event &&
-          typeof event === 'object' &&
-          'enabled' in event &&
-          typeof (event as { enabled: unknown }).enabled === 'boolean'
-        ) {
-          setIsEnabled((event as { enabled: boolean }).enabled);
+    // Listen for new network requests
+    const subscription = emitterRef.current.addListener(
+      NETWORK_EVENT_NAME,
+      (networkRequest: any) => {
+        if (networkRequest && typeof networkRequest === 'object') {
+          networkStore.add(networkRequest as NetworkRequest);
         }
       }
     );
-
     return () => {
-      subscription.remove();
+      subscription?.remove();
+      emitterRef.current?.removeAllListeners(NETWORK_EVENT_NAME);
     };
-  }, [isEnabled]);
+  }, []);
 
-  // Update the global functions to use our context
-  useEffect(() => {
-    // @ts-ignore - Adding to global scope for backward compatibility
-    globalThis.ReactNativeNetworkTools = {
-      enableNetworkLogging: enable,
-      disableNetworkLogging: disable,
-      isNetworkLoggingEnabled: () => isEnabled,
-    };
-  }, [enable, disable, isEnabled]);
-  console.log('NetworkMonitorProvider rendered, isEnabled:', isEnabled);
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      requests,
+      addRequest,
+      clearRequests,
+      getRequestById,
+      annotateRequestError,
+    }),
+    [requests, addRequest, clearRequests, getRequestById, annotateRequestError]
+  );
 
   return (
-    <NetworkMonitorContext.Provider
-      value={{
-        isEnabled,
-        requests,
-        enable,
-        disable,
-        addRequest,
-        clearRequests,
-      }}
-    >
+    <NetworkMonitorContext.Provider value={contextValue}>
       {children}
-      {isEnabled && (
+      {showFloatingMonitor && (
         <View style={styles.floatingContainer} pointerEvents="box-none">
-          <FloatingNetworkMonitor isEnabled={isEnabled} />
+          <FloatingNetworkMonitor />
         </View>
       )}
     </NetworkMonitorContext.Provider>
@@ -188,6 +147,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     pointerEvents: 'box-none',
+    zIndex: 9999,
   },
 });
 
