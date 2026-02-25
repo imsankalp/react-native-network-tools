@@ -1,6 +1,6 @@
 {
   "name": "react-native-network-tools",
-  "version": "0.1.0",
+  "version": "v-0.0.1-beta.1",
   "description": "A library that allows you to check your network logs and more using just a tap",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
