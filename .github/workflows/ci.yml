@@ -42,7 +42,7 @@ jobs:
         run: yarn install --immutable && yarn prepare
 
       - name: Publish package
-        run: npm publish --provenance # The provenance flag adds verifiable metadata
+        run: npm publish --access public --provenance # The provenance flag adds verifiable metadata
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }} # Reference the GitHub secret
   lint:
