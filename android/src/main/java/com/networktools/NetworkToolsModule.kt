@@ -3,8 +3,6 @@ package com.networktools
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
 import com.networktools.interceptor.NetworkToolsEventEmitter
-import com.networktools.storage.NetworkRequestStorage
-import org.json.JSONArray
 
 @ReactModule(name = NetworkToolsModule.NAME)
 class NetworkToolsModule(reactContext: ReactApplicationContext) :
@@ -26,25 +24,19 @@ class NetworkToolsModule(reactContext: ReactApplicationContext) :
   }
 
   override fun getAllRequests(): String {
-    val requests = NetworkRequestStorage.getAllRequests()
-    val jsonArray = JSONArray()
-    requests.forEach { request ->
-      jsonArray.put(request.toJson())
-    }
-    return jsonArray.toString()
+    return NetworkToolsModuleDelegate.getAllRequests()
   }
 
   override fun getRequestById(id: String): String {
-    val request = NetworkRequestStorage.getRequestById(id)
-    return request?.toJson()?.toString() ?: "{}"
+    return NetworkToolsModuleDelegate.getRequestById(id)
   }
 
   override fun clearAllRequests() {
-    NetworkRequestStorage.clearAll()
+    NetworkToolsModuleDelegate.clearAllRequests()
   }
 
   override fun getRequestCount(): Double {
-    return NetworkRequestStorage.getCount().toDouble()
+    return NetworkToolsModuleDelegate.getRequestCount()
   }
 
   override fun addListener(eventType: String?) {

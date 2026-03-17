@@ -9,10 +9,10 @@ import java.util.HashMap
 
 class NetworkToolsPackage : BaseReactPackage() {
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
-    return if (name == NetworkToolsModule.NAME) {
-      NetworkToolsModule(reactContext)
-    } else {
-      null
+    return when (name) {
+      NetworkToolsModule.NAME -> NetworkToolsModule(reactContext)
+      NetworkToolsLegacyModule.NAME -> NetworkToolsLegacyModule(reactContext)
+      else -> null
     }
   }
 
@@ -26,6 +26,14 @@ class NetworkToolsPackage : BaseReactPackage() {
         false,  // needsEagerInit
         false,  // isCxxModule
         true // isTurboModule
+      )
+      moduleInfos[NetworkToolsLegacyModule.NAME] = ReactModuleInfo(
+        NetworkToolsLegacyModule.NAME,
+        NetworkToolsLegacyModule.NAME,
+        false,  // canOverrideExistingModule
+        false,  // needsEagerInit
+        false,  // isCxxModule
+        false // isTurboModule
       )
       moduleInfos
     }
