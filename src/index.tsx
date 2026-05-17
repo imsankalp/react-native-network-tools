@@ -8,7 +8,11 @@ import { networkStore } from './store/NetworkStore';
 export { NetworkMonitorProvider, useNetworkMonitor };
 
 // Native module direct access (for advanced usage)
-import NetworkTools from './NativeNetworkTools';
+import NetworkTools, {
+  getNetworkToolsRuntime,
+  isNativeNetworkToolsAvailable,
+  type NetworkToolsRuntime,
+} from './NativeNetworkTools';
 export const getAllNetworkRequests = (): string =>
   NetworkTools.getAllRequests();
 export const getNetworkRequestById = (id: string): string =>
@@ -16,6 +20,12 @@ export const getNetworkRequestById = (id: string): string =>
 export const clearNetworkRequests = (): void => NetworkTools.clearAllRequests();
 export const getNetworkRequestCount = (): number =>
   NetworkTools.getRequestCount();
+export const getAllRequests = getAllNetworkRequests;
+export const getRequestById = getNetworkRequestById;
+export const clearAllRequests = clearNetworkRequests;
+export const getRequestCount = getNetworkRequestCount;
+export { getNetworkToolsRuntime, isNativeNetworkToolsAvailable };
+export type { NetworkToolsRuntime };
 export const annotateNetworkRequestError = (
   input: AnnotateNetworkRequestErrorInput
 ): string | null => networkStore.annotateRequestError(input);
@@ -81,6 +91,8 @@ const ReactNativeNetworkTools = {
   getRequestById: getNetworkRequestById,
   clearAllRequests: clearNetworkRequests,
   getRequestCount: getNetworkRequestCount,
+  getNetworkToolsRuntime,
+  isNativeNetworkToolsAvailable,
   annotateNetworkRequestError,
   reportError,
   subscribeToErrors,

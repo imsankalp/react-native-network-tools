@@ -1,11 +1,13 @@
+no_tty: true
+
 pre-commit:
-  parallel: true
+  parallel: false
   commands:
     lint:
-      glob: "*.{js,ts,jsx,tsx}"
+      glob: '**/*.{js,jsx,ts,tsx}'
       run: yarn eslint {staged_files}
     types:
-      glob: "*.{js,ts, jsx, tsx}"
+      glob: '**/*.{js,jsx,ts,tsx}'
       run: yarn tsc
 commit-msg:
   parallel: true

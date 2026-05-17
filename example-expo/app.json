@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "NetworkToolsExpoExample",
+    "slug": "network-tools-expo-example",
+    "version": "1.0.0",
+    "sdkVersion": "53.0.0",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "plugins": ["react-native-network-tools"],
+    "android": {
+      "package": "com.networktools.expoexample"
+    },
+    "ios": {
+      "bundleIdentifier": "com.networktools.expoexample"
+    }
+  }
+}

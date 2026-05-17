@@ -119,13 +119,13 @@ export class NetworkAnalytics {
 
     // Time range stats
     const last5Minutes = this.requests.filter(
-      (req) => now - req.duration <= 5 * 60 * 1000
+      (req) => now - req.requestTime <= 5 * 60 * 1000
     ).length;
     const last15Minutes = this.requests.filter(
-      (req) => now - req.duration <= 15 * 60 * 1000
+      (req) => now - req.requestTime <= 15 * 60 * 1000
     ).length;
     const lastHour = this.requests.filter(
-      (req) => now - req.duration <= 60 * 60 * 1000
+      (req) => now - req.requestTime <= 60 * 60 * 1000
     ).length;
 
     return {
@@ -183,8 +183,8 @@ export class NetworkAnalytics {
       // Time range filter
       if (filter.timeRange) {
         if (
-          request.duration < filter.timeRange.start ||
-          request.duration > filter.timeRange.end
+          request.requestTime < filter.timeRange.start ||
+          request.requestTime > filter.timeRange.end
         ) {
           return false;
         }
