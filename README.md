@@ -21,6 +21,16 @@ npm install react-native-network-tools
 yarn add react-native-network-tools
 ```
 
+If you use Expo Development Builds, add the plugin to `app.json`:
+
+```json
+{
+  "expo": {
+    "plugins": ["react-native-network-tools"]
+  }
+}
+```
+
 ## Quick Start
 
 ### 1. Configure OkHttpClient (Android)
@@ -99,6 +109,12 @@ Clear all stored network requests from memory.
 ### `getRequestCount(): number`
 Get the total count of stored network requests.
 
+### `isNativeNetworkToolsAvailable(): boolean`
+Detect if the native module is available at runtime.
+
+### `getNetworkToolsRuntime(): 'turbo' | 'legacy' | 'unavailable'`
+Detect whether the module is running over TurboModule, legacy bridge, or is unavailable.
+
 ## NetworkRequest Type
 
 ```typescript
@@ -138,12 +154,18 @@ buildTypes {
 
 ## Advanced Usage
 
-For detailed setup instructions, custom configurations, and advanced usage patterns, see the [Setup Guide](SETUP_GUIDE.md).
+For detailed setup instructions, custom configurations, and advanced usage patterns, see the [Setup Guide](docs/SETUP_GUIDE.md).
+For Expo validation, see the [Expo smoke test](docs/EXPO_SMOKE_TEST.md).
 
 ## Platform Support
 
-- ✅ Android (via OkHttp interceptor)
-- 🚧 iOS (coming soon)
+| Platform / Runtime | Status | Notes |
+| --- | --- | --- |
+| React Native Android (New Architecture) | ✅ Supported | TurboModule path |
+| React Native Android (Old Architecture) | ✅ Supported | Legacy bridge fallback |
+| Expo Development Build + Prebuild (Android) | ✅ Supported | Use config plugin |
+| Expo Go | ❌ Not supported | Native interception requires a dev build |
+| iOS | 🚧 In progress | Not yet implemented end-to-end |
 
 ## Contributing
 

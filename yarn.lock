@@ -4367,21 +4367,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^19.1.0":
+"@types/react@npm:*, @types/react@npm:^19.1.0, @types/react@npm:~19.2.0":
   version: 19.2.14
   resolution: "@types/react@npm:19.2.14"
   dependencies:
     csstype: ^3.2.2
   checksum: ddd330292abf2dc2cfa65188e1c5f67cc6e90f8d8ffb088f753a38db9d123f942c23d324a6b7e8027ff04f22b395492150f54b9b520b6cbec1e8841e669f2c19
-  languageName: node
-  linkType: hard
-
-"@types/react@npm:~19.0.10":
-  version: 19.0.14
-  resolution: "@types/react@npm:19.0.14"
-  dependencies:
-    csstype: ^3.0.2
-  checksum: fa749597f3500e1e8d045b4460cdbb6c67f4bc37e13ffb9d5ce059b71526f62f8c6836169772e3a1a64df9326291477d5c1c92262100161f74d5b5fa2a420c8d
   languageName: node
   linkType: hard
 
@@ -6278,7 +6269,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csstype@npm:^3.0.2, csstype@npm:^3.2.2":
+"csstype@npm:^3.2.2":
   version: 3.2.3
   resolution: "csstype@npm:3.2.3"
   checksum: cb882521b3398958a1ce6ca98c011aec0bde1c77ecaf8a1dd4db3b112a189939beae3b1308243b2fe50fc27eb3edeb0f73a5a4d91d928765dc6d5ecc7bda92ee
@@ -12189,7 +12180,7 @@ __metadata:
   resolution: "react-native-network-tools-example-expo@workspace:example-expo"
   dependencies:
     "@babel/core": ^7.25.0
-    "@types/react": ~19.0.10
+    "@types/react": ~19.2.0
     expo: ~53.0.0
     expo-status-bar: ~2.2.0
     react: 19.0.0

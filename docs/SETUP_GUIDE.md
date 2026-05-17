@@ -25,6 +25,20 @@ npm install react-native-network-tools
 yarn add react-native-network-tools
 ```
 
+### 1.1 Expo Development Build + Prebuild (Android)
+
+If you are using Expo Development Builds, add the plugin:
+
+```json
+{
+  "expo": {
+    "plugins": ["react-native-network-tools"]
+  }
+}
+```
+
+Then run `expo prebuild` so the Android native patch is applied to `MainApplication`.
+
 ### 2. Configure OkHttpClient
 
 You need to add the NetworkTools interceptor to your OkHttpClient. This is typically done in your React Native app's native Android code.
@@ -118,27 +132,18 @@ val client = OkHttpClient.Builder()
   .build()
 ```
 
-### 3. Enable Network Tracking in Your App
+### 3. Runtime Capability Check (Optional)
 
-In your React Native JavaScript/TypeScript code, enable tracking during app initialization:
+You can detect which runtime path is active:
 
 ```typescript
-import { useEffect } from 'react';
-import * as NetworkTools from 'react-native-network-tools';
+import {
+  getNetworkToolsRuntime,
+  isNativeNetworkToolsAvailable,
+} from 'react-native-network-tools';
 
-function App() {
-  useEffect(() => {
-    // Enable network tracking
-    NetworkTools.enable();
-    
-    // Optional: Check if it's enabled
-    console.log('Network tracking enabled:', NetworkTools.isEnabled());
-  }, []);
-
-  return (
-    // Your app content
-  );
-}
+console.log('network-tools runtime:', getNetworkToolsRuntime());
+console.log('native available:', isNativeNetworkToolsAvailable());
 ```
 
 ## Usage Examples
@@ -233,10 +238,19 @@ productFlavors {
 
 ### Network requests not being captured
 
-1. Verify that `NetworkTools.enable()` is called
-2. Check that you're running a debug build
-3. Ensure the interceptor is added to your OkHttpClient
-4. Verify that your network library uses OkHttp (most React Native networking does)
+1. Check that you're running a debug build
+2. Ensure the interceptor is added to your OkHttpClient
+3. Verify that your network library uses OkHttp (most React Native networking does)
+4. Check `getNetworkToolsRuntime()`:
+   - `turbo` = new architecture path
+   - `legacy` = old architecture fallback path
+   - `unavailable` = native module not found (common in Expo Go)
+
+### Expo-specific notes
+
+1. Expo Go is not supported for native interception.
+2. Use an Expo Development Build and run `expo prebuild` after adding the plugin.
+3. If auto-patching fails for `MainApplication`, add `NetworkingModule.setCustomClientBuilder(...)` manually as shown above.
 
 ### Build errors
 
