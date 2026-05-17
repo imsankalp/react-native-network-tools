@@ -35,7 +35,11 @@ export interface NetworkToolsType {
   getRequestById: (id: string) => NetworkRequest | null;
   clearAllRequests: () => void;
   getRequestCount: () => number;
+  getNetworkToolsRuntime: () => NetworkToolsRuntime;
+  isNativeNetworkToolsAvailable: () => boolean;
 }
+
+export type NetworkToolsRuntime = 'turbo' | 'legacy' | 'unavailable';
 
 export interface NetworkToolsProviderProps {
   children: React.ReactNode;

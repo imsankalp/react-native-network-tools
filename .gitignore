@@ -72,6 +72,10 @@ android/keystores/debug.keystore
 # Expo
 .expo/
 
+# expo-example-app generated native folders (managed workflow, prebuild on demand)
+example-expo/android/
+example-expo/ios/
+
 # Turborepo
 .turbo/
 
