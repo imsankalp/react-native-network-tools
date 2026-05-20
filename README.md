@@ -38,22 +38,24 @@ If you use Expo Development Builds, add the plugin to `app.json`:
 Add the interceptor to your `MainApplication.kt`:
 
 ```kotlin
+import com.facebook.react.modules.network.NetworkingModule
 import com.networktools.NetworkToolsManager
 import okhttp3.OkHttpClient
 
 class MainApplication : Application(), ReactApplication {
 
-
   override fun onCreate() {
     super.onCreate()
 
-    NetworkingModule.setCustomClientBuilder(
-      object : NetworkingModule.CustomClientBuilder {
-        override fun apply(builder: OkHttpClient.Builder) {
-          NetworkToolsManager.addInterceptor(builder)
+    if (BuildConfig.DEBUG) {
+      NetworkingModule.setCustomClientBuilder(
+        object : NetworkingModule.CustomClientBuilder {
+          override fun apply(builder: OkHttpClient.Builder) {
+            NetworkToolsManager.addInterceptor(builder)
+          }
         }
-      }
-    )
+      )
+    }
 
     // rest code
   }
