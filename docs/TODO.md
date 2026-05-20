@@ -138,38 +138,115 @@ This checklist will help you complete the development and testing of react-nativ
 - [ ] Test on iOS
 - [ ] Update documentation
 
-### 7. Advanced Features (Optional)
+### 7. Advanced Features
 
-- [ ] Request filtering
-  - [ ] By URL pattern
-  - [ ] By method
-  - [ ] By status code
-  - [ ] By time range
+#### Tier 1 — Core Inspector Completeness
 
-- [ ] Search functionality
-  - [ ] Search in URLs
-  - [ ] Search in request/response bodies
-  - [ ] Search in headers
+- [ ] Session summary dashboard
+  - [ ] Total requests, success/fail counts, total data transferred
+  - [ ] Average and peak latency at a glance
+  - [ ] Shown as a stats panel above the request list
 
-- [ ] Export functionality
-  - [ ] Export to JSON file
-  - [ ] Share via system share sheet
-  - [ ] Copy to clipboard
+- [ ] Export to CSV / JSON
+  - [ ] Serialize all captured requests to CSV rows
+  - [ ] Full JSON dump of session
+  - [ ] Write to device file system, then trigger share sheet
 
-- [ ] UI Components
-  - [ ] Pre-built NetworkInspector screen
-  - [ ] Request detail modal
-  - [ ] Search and filter UI
+- [ ] Share individual request
+  - [ ] Long-press a request to open share options
+  - [ ] Format choices: plain text summary, JSON, cURL command
+  - [ ] Use RN `Share` API / `expo-sharing`
 
-- [ ] Request replay
-  - [ ] Replay captured requests
-  - [ ] Modify and replay
-  - [ ] Batch replay
+- [ ] HAR (HTTP Archive) export
+  - [ ] Full HAR 1.2 format — importable into Postman, Charles, Proxyman, browser DevTools
+  - [ ] Include timings, headers, bodies, cookies
 
-- [ ] Mock responses
-  - [ ] Return mock data for testing
-  - [ ] Conditional mocking
-  - [ ] Mock response editor
+- [ ] cURL copy
+  - [ ] One-tap copy of a request as a ready-to-run `curl` command
+  - [ ] Include headers, method, body, and URL
+
+#### Tier 2 — Analytics & Statistics
+
+- [ ] Data usage breakdown
+  - [ ] Bytes sent and received per domain
+  - [ ] Bytes per endpoint
+  - [ ] Running total for the session
+
+- [ ] Response time distribution
+  - [ ] P50 / P95 / P99 latency per domain
+  - [ ] Simple histogram or spark-line view
+  - [ ] Time-to-first-byte (TTFB) separate from total duration
+
+- [ ] Per-domain leaderboard
+  - [ ] Sorted by: slowest average, most calls, most errors
+  - [ ] Drillable — tap domain to see its requests
+
+- [ ] Slow request alerts
+  - [ ] Configurable threshold (e.g. > 2 s) via `NetworkMonitorProvider` prop
+  - [ ] Visual badge / highlight on slow requests in the list
+
+- [ ] Error rate tracking
+  - [ ] 4xx / 5xx frequency over time within a session
+  - [ ] Separate counters for client errors vs server errors
+
+#### Tier 3 — Developer Productivity
+
+- [ ] Persistent storage (opt-in)
+  - [ ] Save requests across restarts to AsyncStorage or MMKV
+  - [ ] Configurable via `persistRequests` prop on `NetworkMonitorProvider`
+  - [ ] Clear-on-launch option
+
+- [ ] Pinned / bookmarked requests
+  - [ ] Mark specific requests to prevent FIFO eviction
+  - [ ] Separate "Pinned" tab in the monitor UI
+
+- [ ] Regex search and filter
+  - [ ] Toggle between plain-text and regex mode in the search bar
+  - [ ] Filter across URL, headers, and body simultaneously
+  - [ ] Filter by URL pattern, method, status code, time range (migrated from old list)
+
+- [ ] Request diff
+  - [ ] Select two requests to the same endpoint and compare side-by-side
+  - [ ] Highlight header / body changes between calls (useful for pagination, mutations)
+
+- [ ] GraphQL-aware display
+  - [ ] Parse `operationName`, `variables`, and `data` from GraphQL POST bodies
+  - [ ] Show operation name as the display title instead of the raw URL
+
+- [ ] WebSocket monitoring
+  - [ ] Capture WebSocket frames via a custom OkHttp `WebSocketListener` wrapper
+  - [ ] Show open/close events and individual frames in a dedicated tab
+
+#### Tier 4 — Power Features
+
+- [ ] Mock / intercept responses
+  - [ ] Match requests by URL pattern and return a configured mock response
+  - [ ] No-server testing directly from the in-app tool
+  - [ ] Mock editor UI — status code, headers, body
+  - [ ] Conditional mocking (e.g. only on N-th call)
+
+- [ ] Replay requests
+  - [ ] Re-fire a captured request with one tap
+  - [ ] Editable replay — modify headers / body before sending
+  - [ ] Batch replay of a selected set of requests
+
+- [ ] Network condition simulation
+  - [ ] Artificial latency injection (configurable ms)
+  - [ ] Bandwidth throttling (configurable KB/s)
+  - [ ] Simulate offline / flaky connection
+
+- [ ] Sensitive header redaction
+  - [ ] Auto-mask `Authorization`, `Cookie`, `X-Api-Key` by default
+  - [ ] Configurable allowlist / blocklist via `NetworkMonitorProvider` prop
+  - [ ] Toggle reveal on tap in the detail view
+
+- [ ] Shake-to-open
+  - [ ] Open the network monitor on device shake — no floating button required
+  - [ ] Opt-in via `openOnShake` prop
+
+- [ ] Desktop companion / Metro plugin
+  - [ ] Stream captured requests to a browser panel alongside the Metro bundler
+  - [ ] WebSocket bridge from the app to a local dev-server listener
 
 ### 8. Pre-Release Checklist
 

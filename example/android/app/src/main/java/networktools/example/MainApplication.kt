@@ -38,13 +38,15 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
 
-    NetworkingModule.setCustomClientBuilder(
-      object : NetworkingModule.CustomClientBuilder {
-        override fun apply(builder: OkHttpClient.Builder) {
-          NetworkToolsManager.addInterceptor(builder)
+    if (BuildConfig.DEBUG) {
+      NetworkingModule.setCustomClientBuilder(
+        object : NetworkingModule.CustomClientBuilder {
+          override fun apply(builder: OkHttpClient.Builder) {
+            NetworkToolsManager.addInterceptor(builder)
+          }
         }
-      }
-    )
+      )
+    }
 
     loadReactNative(this)
   }

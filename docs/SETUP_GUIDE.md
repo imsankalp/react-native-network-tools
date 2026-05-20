@@ -53,6 +53,7 @@ If you're using React Native's default networking (fetch), you'll need to custom
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.defaults.DefaultReactNativeHost
+import com.facebook.react.modules.network.NetworkingModule
 import com.networktools.NetworkToolsManager
 import okhttp3.OkHttpClient
 
@@ -61,18 +62,22 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
 
-    NetworkingModule.setCustomClientBuilder(
-      object : NetworkingModule.CustomClientBuilder {
-        override fun apply(builder: OkHttpClient.Builder) {
-          NetworkToolsManager.addInterceptor(builder)
+    if (BuildConfig.DEBUG) {
+      NetworkingModule.setCustomClientBuilder(
+        object : NetworkingModule.CustomClientBuilder {
+          override fun apply(builder: OkHttpClient.Builder) {
+            NetworkToolsManager.addInterceptor(builder)
+          }
         }
-      }
-    )
+      )
+    }
 
     // rest code
   }
 }
 ```
+
+> **Why `BuildConfig.DEBUG`?** The library's own `BuildConfig.NETWORK_TOOLS_ENABLED` is already set to `false` for release builds, so `NetworkToolsManager.addInterceptor()` would be a no-op anyway. The outer `if (BuildConfig.DEBUG)` guard is a second line of defence: it prevents the `setCustomClientBuilder` call itself from running in production and makes the intent explicit to anyone reading the code.
 
 **Java:**
 
@@ -80,40 +85,29 @@ class MainApplication : Application(), ReactApplication {
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.defaults.DefaultReactNativeHost;
+import com.facebook.react.modules.network.NetworkingModule;
 import com.networktools.NetworkToolsManager;
 import okhttp3.OkHttpClient;
 
 public class MainApplication extends Application implements ReactApplication {
 
-  private final ReactNativeHost mReactNativeHost =
-    new DefaultReactNativeHost(this) {
-      // ... other configurations
-
-      @Override
-      public boolean getUseDeveloperSupport() {
-        return BuildConfig.DEBUG;
-      }
-
- @Override
-public void onCreate() {
+  @Override
+  public void onCreate() {
     super.onCreate();
 
-    // Use NetworkingModule.setCustomClientBuilder to set the custom builder logic
-    NetworkingModule.setCustomClientBuilder(
-        new NetworkingModule.CustomClientBuilder() { // 1. Create an anonymous class
-            
-            // 2. Implement the required 'apply' method
-            @Override
-            public void apply(OkHttpClient.Builder builder) {
-                // 3. Call your static/utility method to add the interceptor
-                NetworkToolsManager.addInterceptor(builder);
-            }
+    if (BuildConfig.DEBUG) {
+      NetworkingModule.setCustomClientBuilder(
+        new NetworkingModule.CustomClientBuilder() {
+          @Override
+          public void apply(OkHttpClient.Builder builder) {
+            NetworkToolsManager.addInterceptor(builder);
+          }
         }
-    );
+      );
+    }
 
     // rest of your code
-}
-    };
+  }
 }
 ```
 
