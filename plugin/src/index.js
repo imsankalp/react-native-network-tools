@@ -31,22 +31,26 @@ const JAVA_IMPORTS = [
   'import okhttp3.OkHttpClient;',
 ];
 
-const KOTLIN_SNIPPET = `    NetworkingModule.setCustomClientBuilder(
-      object : NetworkingModule.CustomClientBuilder {
-        override fun apply(builder: OkHttpClient.Builder) {
-          NetworkToolsManager.addInterceptor(builder)
+const KOTLIN_SNIPPET = `    if (BuildConfig.DEBUG) {
+      NetworkingModule.setCustomClientBuilder(
+        object : NetworkingModule.CustomClientBuilder {
+          override fun apply(builder: OkHttpClient.Builder) {
+            NetworkToolsManager.addInterceptor(builder)
+          }
         }
-      }
-    )`;
+      )
+    }`;
 
-const JAVA_SNIPPET = `    NetworkingModule.setCustomClientBuilder(
-      new NetworkingModule.CustomClientBuilder() {
-        @Override
-        public void apply(OkHttpClient.Builder builder) {
-          NetworkToolsManager.addInterceptor(builder);
+const JAVA_SNIPPET = `    if (BuildConfig.DEBUG) {
+      NetworkingModule.setCustomClientBuilder(
+        new NetworkingModule.CustomClientBuilder() {
+          @Override
+          public void apply(OkHttpClient.Builder builder) {
+            NetworkToolsManager.addInterceptor(builder);
+          }
         }
-      }
-    );`;
+      );
+    }`;
 
 function ensureImport(src, importLine) {
   if (src.includes(importLine)) {
