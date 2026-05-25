@@ -14,7 +14,10 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/imsankalp/react-native-network-tools.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm,cpp}"
-  s.private_header_files = "ios/**/*.h"
+
+  # NetworkToolsManager.h is public so Swift AppDelegates can call
+  # [NetworkToolsManager activate] after `import NetworkTools`.
+  s.public_header_files = "ios/NetworkToolsManager.h"
 
 
   install_modules_dependencies(s)
