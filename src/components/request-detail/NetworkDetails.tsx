@@ -168,29 +168,32 @@ const OverviewTab: React.FC<{ request: NetworkRequest }> = ({ request }) => {
 
 // Request Tab Component
 const RequestTab: React.FC<{ request: NetworkRequest }> = ({ request }) => {
+  const requestBody = request.requestBody
+    ? safeJsonParse(request.requestBody)
+    : null;
+
   return (
     <View style={styles.tabContent}>
       <SectionTitle title="Headers" />
       <DataBox data={request.requestHeaders || {}} placeholder="No headers" />
       <SectionTitle title="Body" />
-      <DataBox data={request.requestData || {}} placeholder="No body" />
+      <DataBox data={requestBody} placeholder="No body" />
     </View>
   );
 };
 
 // Response Tab Component
 const ResponseTab: React.FC<{ request: NetworkRequest }> = ({ request }) => {
-  const responseData =
-    typeof request.responseData === 'string'
-      ? safeJsonParse(request.responseData)
-      : request.responseData;
+  const responseBody = request.responseBody
+    ? safeJsonParse(request.responseBody)
+    : null;
 
   return (
     <View style={styles.tabContent}>
       <SectionTitle title="Headers" />
       <DataBox data={request.responseHeaders || {}} placeholder="No headers" />
       <SectionTitle title="Body" />
-      <DataBox data={responseData || {}} placeholder="No body" />
+      <DataBox data={responseBody} placeholder="No body" />
       {request.customError && (
         <>
           <SectionTitle title="Custom Error Details" />
@@ -269,14 +272,21 @@ const DataBox: React.FC<{ data: any; placeholder: string }> = ({
   data,
   placeholder,
 }) => {
-  const isEmpty = !data || Object.keys(data).length === 0;
+  const isEmpty =
+    data === null ||
+    data === undefined ||
+    data === '' ||
+    (typeof data === 'object' && Object.keys(data).length === 0);
+
+  const display =
+    typeof data === 'string' ? data : JSON.stringify(data, null, 2);
 
   return (
     <View style={styles.dataBox}>
       {isEmpty ? (
         <Text style={styles.placeholderText}>{placeholder}</Text>
       ) : (
-        <Text style={styles.dataText}>{JSON.stringify(data, null, 2)}</Text>
+        <Text style={styles.dataText}>{display}</Text>
       )}
     </View>
   );
@@ -362,6 +372,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingBottom: spacing.lg,
   },
   tabContent: {
     padding: spacing.md,

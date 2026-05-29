@@ -1,16 +1,33 @@
 #import "NetworkToolsInterceptor.h"
 #import "NetworkToolsStorage.h"
 #import "NetworkToolsManager.h"
+#import <objc/runtime.h>
 
-// Property key used to mark requests this interceptor is already handling,
-// preventing infinite recursion when the forwarding URLSession is created.
 static NSString *const kNTHandledKey = @"NetworkToolsHandled";
-
-// Cap body capture at 256 KB to avoid buffering large binary payloads in RAM.
 static const NSInteger kNTMaxBodyBytes = 256 * 1024;
+
+// Original IMP saved during swizzle so we can call through to it.
+static IMP gOriginalProtocolClassesIMP = nil;
+
+// Replacement implementation for -[NSURLSessionConfiguration protocolClasses].
+// Prepends NetworkToolsInterceptor to every session configuration, including
+// React Native's internal sessions that are created before +activate is called.
+static NSArray *nt_injectedProtocolClasses(NSURLSessionConfiguration *self, SEL _cmd) {
+  NSArray *original = gOriginalProtocolClassesIMP
+    ? ((NSArray *(*)(id, SEL))gOriginalProtocolClassesIMP)(self, _cmd)
+    : @[];
+  NSMutableArray *classes = original ? [original mutableCopy] : [NSMutableArray array];
+  if (![classes containsObject:[NetworkToolsInterceptor class]]) {
+    [classes insertObject:[NetworkToolsInterceptor class] atIndex:0];
+  }
+  return [classes copy];
+}
 
 @interface NetworkToolsInterceptor () <NSURLSessionDataDelegate>
 @property (nonatomic, strong) NSURLSessionDataTask *dataTask;
+// Strong reference to the forwarding session — without this the session is
+// deallocated immediately, cancelling the data task before it can complete.
+@property (nonatomic, strong) NSURLSession *forwardingSession;
 @property (nonatomic, strong) NSMutableData *responseData;
 @property (nonatomic, strong, nullable) NSHTTPURLResponse *httpResponse;
 @property (nonatomic, assign) double requestStartTime;
@@ -20,10 +37,22 @@ static const NSInteger kNTMaxBodyBytes = 256 * 1024;
 
 @implementation NetworkToolsInterceptor
 
+#pragma mark - Swizzling
+
++ (void)swizzleSessionConfiguration {
+  static dispatch_once_t once;
+  dispatch_once(&once, ^{
+    Method m = class_getInstanceMethod(
+      [NSURLSessionConfiguration class],
+      @selector(protocolClasses)
+    );
+    gOriginalProtocolClassesIMP = method_setImplementation(m, (IMP)nt_injectedProtocolClasses);
+  });
+}
+
 #pragma mark - NSURLProtocol registration
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request {
-  // Skip requests already being handled by us (prevents infinite loop).
   if ([NSURLProtocol propertyForKey:kNTHandledKey inRequest:request]) {
     return NO;
   }
@@ -41,25 +70,55 @@ static const NSInteger kNTMaxBodyBytes = 256 * 1024;
   self.requestId = [[NSUUID UUID] UUIDString];
   self.requestStartTime = [NSDate date].timeIntervalSince1970 * 1000.0;
   self.responseData = [NSMutableData data];
-  self.capturedRequestBody = [self readBodyFromRequest:self.request];
 
-  // Tag the forwarded request so we don't intercept it again.
+  // Buffer the stream BEFORE mutableCopy — once the stream is read it cannot
+  // be rewound, so copying the request after reading the stream produces a
+  // forwarded request with an exhausted (empty) body.
+  NSData *streamData = nil;
+  if (self.request.HTTPBodyStream) {
+    streamData = [self drainStream:self.request.HTTPBodyStream];
+  }
+
+  // Capture body string for recording.
+  if (streamData.length > 0) {
+    self.capturedRequestBody = [self bodyStringFromData:streamData];
+  } else if (self.request.HTTPBody.length > 0) {
+    self.capturedRequestBody = [self bodyStringFromData:self.request.HTTPBody];
+  }
+
   NSMutableURLRequest *forwarded = [self.request mutableCopy];
+
+  // Replace the (now-exhausted) stream with the buffered NSData so the
+  // forwarded request actually sends the correct body.
+  if (streamData.length > 0) {
+    forwarded.HTTPBody = streamData;
+    forwarded.HTTPBodyStream = nil;
+  }
+
+  // Mark the forwarded request so canInitWithRequest: skips it.
   [NSURLProtocol setProperty:@YES forKey:kNTHandledKey inRequest:forwarded];
 
-  // Use an ephemeral session so cookies / cache don't bleed between the
-  // interceptor's internal session and the app's session.
-  NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
-  NSURLSession *session = [NSURLSession sessionWithConfiguration:config
-                                                        delegate:self
-                                                   delegateQueue:nil];
-  self.dataTask = [session dataTaskWithRequest:forwarded];
+  // Use defaultSessionConfiguration so cookies and credentials are preserved.
+  // Remove ourselves from its protocol list to prevent re-interception.
+  NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+  NSMutableArray *protocols = config.protocolClasses
+    ? [config.protocolClasses mutableCopy]
+    : [NSMutableArray array];
+  [protocols removeObject:[NetworkToolsInterceptor class]];
+  config.protocolClasses = [protocols copy];
+
+  self.forwardingSession = [NSURLSession sessionWithConfiguration:config
+                                                         delegate:self
+                                                    delegateQueue:nil];
+  self.dataTask = [self.forwardingSession dataTaskWithRequest:forwarded];
   [self.dataTask resume];
 }
 
 - (void)stopLoading {
   [self.dataTask cancel];
+  [self.forwardingSession invalidateAndCancel];
   self.dataTask = nil;
+  self.forwardingSession = nil;
 }
 
 #pragma mark - NSURLSessionDataDelegate
@@ -99,7 +158,6 @@ didCompleteWithError:(nullable NSError *)error {
 willPerformHTTPRedirection:(NSHTTPURLResponse *)response
         newRequest:(NSURLRequest *)newRequest
  completionHandler:(void (^)(NSURLRequest *_Nullable))completionHandler {
-  // Pass redirects through transparently; the final response is what gets recorded.
   [self.client URLProtocol:self wasRedirectedToRequest:newRequest redirectResponse:response];
   completionHandler(newRequest);
 }
@@ -112,29 +170,20 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   double duration = responseTime - self.requestStartTime;
 
   NSMutableDictionary *entry = [NSMutableDictionary dictionary];
-  entry[@"id"]          = self.requestId;
-  entry[@"url"]         = request.URL.absoluteString ?: @"";
-  entry[@"method"]      = request.HTTPMethod ?: @"GET";
-  entry[@"requestTime"] = @(self.requestStartTime);
-  entry[@"responseTime"] = @(responseTime);
-  entry[@"duration"]    = @(duration);
-
-  // Request headers
+  entry[@"id"]             = self.requestId;
+  entry[@"url"]            = request.URL.absoluteString ?: @"";
+  entry[@"method"]         = request.HTTPMethod ?: @"GET";
+  entry[@"requestTime"]    = @(self.requestStartTime);
+  entry[@"responseTime"]   = @(responseTime);
+  entry[@"duration"]       = @(duration);
   entry[@"requestHeaders"] = request.allHTTPHeaderFields ?: @{};
+  entry[@"requestBody"]    = self.capturedRequestBody ?: @"";
 
-  // Request body (already captured in startLoading before the request was sent)
-  entry[@"requestBody"] = self.capturedRequestBody ?: @"";
-
-  // Response
   NSHTTPURLResponse *response = self.httpResponse;
   entry[@"responseCode"]    = response ? @(response.statusCode) : @0;
   entry[@"responseHeaders"] = response ? response.allHeaderFields : @{};
-
-  // Response body — skip binary content types, cap text bodies
-  entry[@"responseBody"] = [self responseBodyStringForResponse:response];
-
-  // Error
-  entry[@"error"] = error ? (error.localizedDescription ?: @"Unknown error") : @"";
+  entry[@"responseBody"]    = [self responseBodyStringForResponse:response];
+  entry[@"error"]           = error ? (error.localizedDescription ?: @"Unknown error") : @"";
 
   [[NetworkToolsStorage shared] addRequest:entry];
   [[NetworkToolsManager shared] emitRequest:entry];
@@ -142,37 +191,30 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 
 #pragma mark - Helpers
 
-- (nullable NSString *)readBodyFromRequest:(NSURLRequest *)request {
-  NSData *bodyData = nil;
-
-  if (request.HTTPBody.length > 0) {
-    bodyData = request.HTTPBody;
-  } else if (request.HTTPBodyStream) {
-    NSInputStream *stream = request.HTTPBodyStream;
-    [stream open];
-    NSMutableData *buffer = [NSMutableData data];
-    uint8_t chunk[4096];
-    NSInteger bytesRead;
-    NSInteger totalRead = 0;
-    while (totalRead < kNTMaxBodyBytes &&
-           (bytesRead = [stream read:chunk maxLength:sizeof(chunk)]) > 0) {
-      [buffer appendBytes:chunk length:(NSUInteger)bytesRead];
-      totalRead += bytesRead;
-    }
-    [stream close];
-    bodyData = buffer.length > 0 ? buffer : nil;
+- (NSData *)drainStream:(NSInputStream *)stream {
+  NSMutableData *buffer = [NSMutableData data];
+  [stream open];
+  uint8_t chunk[4096];
+  NSInteger bytesRead;
+  NSInteger totalRead = 0;
+  while (totalRead < kNTMaxBodyBytes &&
+         (bytesRead = [stream read:chunk maxLength:sizeof(chunk)]) > 0) {
+    [buffer appendBytes:chunk length:(NSUInteger)bytesRead];
+    totalRead += bytesRead;
   }
+  [stream close];
+  return buffer;
+}
 
-  if (!bodyData) return nil;
-
-  NSData *capped = bodyData.length <= (NSUInteger)kNTMaxBodyBytes
-    ? bodyData
-    : [bodyData subdataWithRange:NSMakeRange(0, (NSUInteger)kNTMaxBodyBytes)];
+- (nullable NSString *)bodyStringFromData:(NSData *)data {
+  if (data.length == 0) return nil;
+  NSData *capped = data.length <= (NSUInteger)kNTMaxBodyBytes
+    ? data
+    : [data subdataWithRange:NSMakeRange(0, (NSUInteger)kNTMaxBodyBytes)];
   return [[NSString alloc] initWithData:capped encoding:NSUTF8StringEncoding];
 }
 
 - (NSString *)responseBodyStringForResponse:(nullable NSHTTPURLResponse *)response {
-  // Skip binary MIME types entirely.
   NSString *mimeType = response.MIMEType.lowercaseString ?: @"";
   if ([mimeType hasPrefix:@"image/"] ||
       [mimeType hasPrefix:@"video/"] ||

@@ -290,9 +290,6 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     paddingHorizontal: 16,
-    // position: 'absolute',
-    // justifyContent: 'center',
-    // alignItems: 'center',
     elevation: 3,
     shadowColor: colors.grey5,
     shadowOffset: { width: 0, height: 2 },
@@ -381,6 +378,7 @@ const styles = StyleSheet.create({
   },
   footerStyle: {
     height: spacing.xxl,
+    paddingBottom: spacing.xl,
   },
 });
 

@@ -28,8 +28,8 @@ export type NetworkRequest = {
   responseCode: number;
   requestHeaders: Record<string, string>;
   responseHeaders: Record<string, string>;
-  requestData?: any;
-  responseData?: any;
+  requestBody?: string;
+  responseBody?: string;
   duration: number;
   requestTime: number;
   responseTime: number;

@@ -11,6 +11,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface NetworkToolsInterceptor : NSURLProtocol
 
+/**
+ * Swizzles NSURLSessionConfiguration.protocolClasses so that every session
+ * created after +activate (including React Native's internal sessions) will
+ * have NetworkToolsInterceptor injected at the front of the protocol list.
+ * Called automatically by +[NetworkToolsManager activate].
+ */
++ (void)swizzleSessionConfiguration;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -1,10 +1,11 @@
 #import "NetworkToolsManager.h"
 #import "NetworkToolsInterceptor.h"
+#import <React/RCTEventEmitter.h>
 
 static NSString *const kNTEventName = @"NetworkTools:onRequest";
 
 @implementation NetworkToolsManager {
-  __weak id _emitter;
+  __weak RCTEventEmitter *_emitter;
 }
 
 + (instancetype)shared {
@@ -19,6 +20,10 @@ static NSString *const kNTEventName = @"NetworkTools:onRequest";
 + (void)activate {
 #if DEBUG
   [NSURLProtocol registerClass:[NetworkToolsInterceptor class]];
+  // Swizzle NSURLSessionConfiguration.protocolClasses so that React Native's
+  // internal sessions (which snapshot the protocol list at session creation
+  // time) also include NetworkToolsInterceptor.
+  [NetworkToolsInterceptor swizzleSessionConfiguration];
 #endif
 }
 
@@ -28,11 +33,9 @@ static NSString *const kNTEventName = @"NetworkTools:onRequest";
 
 - (void)emitRequest:(NSDictionary *)requestDict {
 #if DEBUG
-  id emitter = _emitter;
+  RCTEventEmitter *emitter = _emitter;
   if (emitter == nil) return;
-  if ([emitter respondsToSelector:@selector(sendEventWithName:body:)]) {
-    [emitter sendEventWithName:kNTEventName body:requestDict];
-  }
+  [emitter sendEventWithName:kNTEventName body:requestDict];
 #endif
 }
 

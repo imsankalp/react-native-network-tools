@@ -1,5 +1,7 @@
 #import <Foundation/Foundation.h>
 
+@class RCTEventEmitter;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /**
@@ -26,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Called by the native module to hand over its RCTEventEmitter reference so
  * the interceptor can emit events to JavaScript.
  */
-- (void)setEmitter:(nullable id)emitter;
+- (void)setEmitter:(nullable RCTEventEmitter *)emitter;
 
 /**
  * Emits a captured request dictionary as a "NetworkTools:onRequest" event.

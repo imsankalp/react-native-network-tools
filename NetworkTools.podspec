@@ -19,6 +19,11 @@ Pod::Spec.new do |s|
   # [NetworkToolsManager activate] after `import NetworkTools`.
   s.public_header_files = "ios/NetworkToolsManager.h"
 
+  # DEFINES_MODULE = YES tells CocoaPods to generate an umbrella header +
+  # module map for this pod and inject -fmodule-map-file into every dependent
+  # target's xcconfig, which is what makes `import NetworkTools` work in Swift
+  # without use_frameworks!. (Same mechanism used by RNReanimated et al.)
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
 
   install_modules_dependencies(s)
 end
