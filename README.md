@@ -33,7 +33,7 @@ If you use Expo Development Builds, add the plugin to `app.json`:
 
 ## Quick Start
 
-### 1. Configure OkHttpClient (Android)
+### 1a. Configure OkHttpClient (Android)
 
 Add the interceptor to your `MainApplication.kt`:
 
@@ -61,6 +61,44 @@ class MainApplication : Application(), ReactApplication {
   }
 }
 ```
+
+### 1b. Register the URLProtocol interceptor (iOS)
+
+Add the activation call to your `AppDelegate.swift`:
+
+```swift
+import NetworkTools
+
+func application(
+  _ application: UIApplication,
+  didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+) -> Bool {
+  #if DEBUG
+  NetworkToolsManager.activate()
+  #endif
+
+  // rest of your setup
+  return true
+}
+```
+
+For Objective-C `AppDelegate.mm`:
+
+```objc
+#import <NetworkTools/NetworkToolsManager.h>
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+#if DEBUG
+  [NetworkToolsManager activate];
+#endif
+  // rest of your setup
+  return YES;
+}
+```
+
+If you use **Expo**, the plugin patches both `MainApplication` and `AppDelegate` automatically during `expo prebuild` — no manual steps needed.
 
 ### 2. Wrap Your App with NetworkMonitorProvider
 
@@ -165,9 +203,10 @@ For Expo validation, see the [Expo smoke test](docs/EXPO_SMOKE_TEST.md).
 | --- | --- | --- |
 | React Native Android (New Architecture) | ✅ Supported | TurboModule path |
 | React Native Android (Old Architecture) | ✅ Supported | Legacy bridge fallback |
-| Expo Development Build + Prebuild (Android) | ✅ Supported | Use config plugin |
+| React Native iOS (New Architecture) | ✅ Supported | URLProtocol + TurboModule |
+| React Native iOS (Old Architecture) | ✅ Supported | URLProtocol + legacy bridge |
+| Expo Development Build + Prebuild (Android + iOS) | ✅ Supported | Config plugin patches both platforms |
 | Expo Go | ❌ Not supported | Native interception requires a dev build |
-| iOS | 🚧 In progress | Not yet implemented end-to-end |
 
 ## Contributing
 
