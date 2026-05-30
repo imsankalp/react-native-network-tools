@@ -59,8 +59,8 @@ RCT_EXPORT_MODULE(NetworkTools)
   [[NetworkToolsStorage shared] clearAll];
 }
 
-- (double)getRequestCount {
-  return (double)[[NetworkToolsStorage shared] count];
+- (NSNumber *)getRequestCount {
+  return @([[NetworkToolsStorage shared] count]);
 }
 
 // addListener / removeListeners are inherited from RCTEventEmitter and satisfy
