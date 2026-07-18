@@ -1,17 +1,21 @@
 # react-native-network-tools
 
-A powerful React Native library that allows you to track and inspect all network requests in your app. Perfect for debugging, monitoring, and understanding your app's network behavior.
-
-## Features
-
-- 🔍 **Automatic Request Tracking**: Captures all OkHttp network requests automatically
-- 🐛 **Debug-Only**: Zero overhead in production builds (only active in debug mode)
-- 📊 **Detailed Information**: Captures request/response headers, bodies, timing, and errors
-- 💾 **In-Memory Storage**: Stores up to 100 recent requests with automatic cleanup
-- 🔒 **Thread-Safe**: Built with concurrent data structures for reliability
-- ⚡ **Easy Integration**: Simple API with minimal setup required
+Inspect all network requests in your React Native app via a floating overlay. Zero overhead in production — tracking only runs in debug mode.
 
 ![](Screen_recording_20260204_002905.mp4)
+
+## Platform Support
+
+| Platform | Status |
+|---|---|
+| React Native Android (New Architecture) | ✅ |
+| React Native Android (Old Architecture) | ✅ |
+| React Native iOS (New Architecture) | ✅ |
+| React Native iOS (Old Architecture) | ✅ |
+| Expo Development Build | ✅ |
+| Expo Go | ❌ Requires a dev build |
+
+---
 
 ## Installation
 
@@ -21,21 +25,19 @@ npm install react-native-network-tools
 yarn add react-native-network-tools
 ```
 
-If you use Expo Development Builds, add the plugin to `app.json`:
+**Required peer dependencies:**
 
-```json
-{
-  "expo": {
-    "plugins": ["react-native-network-tools"]
-  }
-}
+```sh
+yarn add react-native-gesture-handler react-native-reanimated react-native-safe-area-context
 ```
 
-## Quick Start
+---
 
-### 1a. Configure OkHttpClient (Android)
+## Setup
 
-Add the interceptor to your `MainApplication.kt`:
+### Android — hook the interceptor
+
+In `MainApplication.kt`, register the OkHttp interceptor **before** any requests are made:
 
 ```kotlin
 import com.facebook.react.modules.network.NetworkingModule
@@ -57,14 +59,14 @@ class MainApplication : Application(), ReactApplication {
       )
     }
 
-    // rest code
+    // rest of your setup
   }
 }
 ```
 
-### 1b. Register the URLProtocol interceptor (iOS)
+### iOS — activate the URLProtocol interceptor
 
-Add the activation call to your `AppDelegate.swift`:
+In `AppDelegate.swift`:
 
 ```swift
 import NetworkTools
@@ -77,7 +79,6 @@ func application(
   NetworkToolsManager.activate()
   #endif
 
-  // rest of your setup
   return true
 }
 ```
@@ -93,97 +94,159 @@ For Objective-C `AppDelegate.mm`:
 #if DEBUG
   [NetworkToolsManager activate];
 #endif
-  // rest of your setup
   return YES;
 }
 ```
 
-If you use **Expo**, the plugin patches both `MainApplication` and `AppDelegate` automatically during `expo prebuild` — no manual steps needed.
+### Expo — use the config plugin
 
-### 2. Wrap Your App with NetworkMonitorProvider
+Add the plugin to `app.json` and run `expo prebuild`. The plugin patches both `MainApplication` and `AppDelegate` automatically.
 
-```typescript
+```json
+{
+  "expo": {
+    "plugins": ["react-native-network-tools"]
+  }
+}
+```
+
+---
+
+## Usage
+
+### 1. Wrap your app
+
+Wrap your root component with `NetworkMonitorProvider`. The floating monitor button is shown by default.
+
+```tsx
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NetworkMonitorProvider } from 'react-native-network-tools';
 
-function App() {
+export default function App() {
   return (
-    <NetworkMonitorProvider
-      maxRequests={1000}
-      showFloatingMonitor={true}
-    >
-      {/* Your app code */}
-    </NetworkMonitorProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <NetworkMonitorProvider maxRequests={1000} showFloatingMonitor={true}>
+          {/* your app */}
+        </NetworkMonitorProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 ```
 
-### 3. View Network Requests
+`NetworkMonitorProvider` props:
 
-```typescript
-import * as NetworkTools from 'react-native-network-tools';
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `maxRequests` | `number` | `1000` | Max requests kept in memory (FIFO eviction) |
+| `showFloatingMonitor` | `boolean` | `true` | Whether to render the draggable overlay button |
 
-// Get all requests
-const requests = NetworkTools.getAllRequests();
+### 2. Access requests in code (optional)
 
-// Get specific request
-const request = NetworkTools.getRequestById('request-id');
+```tsx
+import { useNetworkMonitor } from 'react-native-network-tools';
 
-// Clear all requests
-NetworkTools.clearAllRequests();
+function DebugScreen() {
+  const { requests, clearRequests } = useNetworkMonitor();
 
-// Get request count
-const count = NetworkTools.getRequestCount();
+  return (
+    <View>
+      <Text>{requests.length} requests captured</Text>
+      <Button title="Clear" onPress={clearRequests} />
+    </View>
+  );
+}
 ```
+
+`useNetworkMonitor` must be called inside `NetworkMonitorProvider`.
+
+### 3. Annotate errors (optional)
+
+Attach a custom error to any captured request for richer debugging:
+
+```ts
+import { annotateNetworkRequestError } from 'react-native-network-tools';
+
+annotateNetworkRequestError({
+  url: 'https://api.example.com/login',
+  method: 'POST',
+  message: 'Validation failed: email is required',
+  type: 'validation',   // 'http' | 'validation' | 'custom'
+  code: 'EMAIL_REQUIRED',
+});
+```
+
+---
 
 ## API Reference
 
-### `getAllRequests(): NetworkRequest[]`
-Get all captured network requests.
+### `NetworkMonitorProvider`
 
-### `getRequestById(id: string): NetworkRequest | null`
-Get a specific network request by its unique ID.
+React context provider. Renders the floating monitor and manages request state.
 
-### `clearAllRequests(): void`
-Clear all stored network requests from memory.
+### `useNetworkMonitor()`
 
-### `getRequestCount(): number`
-Get the total count of stored network requests.
+Returns `{ requests, clearRequests, getRequestById, addRequest, annotateRequestError }`.
 
-### `isNativeNetworkToolsAvailable(): boolean`
-Detect if the native module is available at runtime.
+### `FloatingNetworkMonitor`
 
-### `getNetworkToolsRuntime(): 'turbo' | 'legacy' | 'unavailable'`
-Detect whether the module is running over TurboModule, legacy bridge, or is unavailable.
+The draggable overlay component. Rendered automatically by `NetworkMonitorProvider` when `showFloatingMonitor={true}`. Import and render it yourself if you need manual placement:
 
-## NetworkRequest Type
+```tsx
+import { FloatingNetworkMonitor } from 'react-native-network-tools';
+```
 
-```typescript
-interface NetworkRequest {
+### Low-level native API
+
+```ts
+import {
+  getAllNetworkRequests,   // returns JSON string of all requests
+  getNetworkRequestById,  // returns JSON string of one request
+  clearNetworkRequests,   // clears native storage
+  getNetworkRequestCount, // returns number
+  isNativeNetworkToolsAvailable,  // boolean
+  getNetworkToolsRuntime,         // 'turbo' | 'legacy' | 'unavailable'
+} from 'react-native-network-tools';
+```
+
+### `NetworkRequest` type
+
+```ts
+type NetworkRequest = {
   id: string;
   url: string;
   method: string;
   requestHeaders: Record<string, string>;
   requestBody?: string;
   requestTime: number;
-  responseCode?: number;
-  responseHeaders?: Record<string, string>;
+  responseCode: number;
+  responseHeaders: Record<string, string>;
   responseBody?: string;
-  responseTime?: number;
-  duration?: number;
+  responseTime: number;
+  duration: number;
   error?: string;
-}
+  customError?: {
+    message: string;
+    code?: string;
+    type: 'http' | 'validation' | 'custom';
+    details?: unknown;
+    source: 'react-native';
+    timestamp: number;
+  };
+};
 ```
 
-## Build Configuration
+---
 
-The library automatically enables tracking only in debug builds. You can customize this behavior:
+## Build configuration
+
+Tracking is enabled only when `BuildConfig.NETWORK_TOOLS_ENABLED` is `true`. Override per build type in `android/app/build.gradle`:
 
 ```gradle
 buildTypes {
   debug {
-    buildConfigField "boolean", "NETWORK_TOOLS_ENABLED", "true"
-  }
-  staging {
     buildConfigField "boolean", "NETWORK_TOOLS_ENABLED", "true"
   }
   release {
@@ -192,30 +255,12 @@ buildTypes {
 }
 ```
 
-## Advanced Usage
-
-For detailed setup instructions, custom configurations, and advanced usage patterns, see the [Setup Guide](docs/SETUP_GUIDE.md).
-For Expo validation, see the [Expo smoke test](docs/EXPO_SMOKE_TEST.md).
-
-## Platform Support
-
-| Platform / Runtime | Status | Notes |
-| --- | --- | --- |
-| React Native Android (New Architecture) | ✅ Supported | TurboModule path |
-| React Native Android (Old Architecture) | ✅ Supported | Legacy bridge fallback |
-| React Native iOS (New Architecture) | ✅ Supported | URLProtocol + TurboModule |
-| React Native iOS (Old Architecture) | ✅ Supported | URLProtocol + legacy bridge |
-| Expo Development Build + Prebuild (Android + iOS) | ✅ Supported | Config plugin patches both platforms |
-| Expo Go | ❌ Not supported | Native interception requires a dev build |
+---
 
 ## Contributing
 
-See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
 MIT
-
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
