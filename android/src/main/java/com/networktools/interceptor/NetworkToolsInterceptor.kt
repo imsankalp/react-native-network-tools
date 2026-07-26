@@ -1,5 +1,6 @@
 package com.networktools.interceptor
 
+import com.networktools.NetworkToolsManager
 import com.networktools.models.NetworkRequest
 import com.networktools.storage.NetworkRequestStorage
 import okhttp3.Interceptor
@@ -14,6 +15,11 @@ import java.util.UUID
  * This interceptor should only be added in debug builds
  */
 class NetworkToolsInterceptor : Interceptor {
+
+  private val binaryContentTypePrefixes = listOf(
+    "image/", "video/", "audio/", "application/octet-stream", "application/zip",
+    "application/pdf", "application/x-", "font/"
+  )
 
   @Throws(IOException::class)
   override fun intercept(chain: Interceptor.Chain): Response {
@@ -37,7 +43,6 @@ class NetworkToolsInterceptor : Interceptor {
       val responseHeaders = captureResponseHeaders(response)
       val responseBody = captureResponseBody(response)
 
-      // Store the network request
       val networkRequest = NetworkRequest(
         id = requestId,
         url = request.url.toString(),
@@ -56,10 +61,8 @@ class NetworkToolsInterceptor : Interceptor {
       NetworkRequestStorage.addRequest(networkRequest)
       NetworkToolsEventEmitter.emitNetworkRequest(networkRequest)
 
-
       return response
     } catch (e: Exception) {
-      // Capture error details
       error = e.message ?: "Unknown error"
       responseTime = System.currentTimeMillis()
       duration = responseTime - requestTime
@@ -96,9 +99,16 @@ class NetworkToolsInterceptor : Interceptor {
 
   private fun captureRequestBody(request: Request): String? {
     return try {
+      val contentType = request.body?.contentType()?.toString().orEmpty()
+      if (isBinaryContentType(contentType)) return "[binary content — not captured]"
+
+      val limit = NetworkToolsManager.maxBodyCaptureBytes
       val buffer = Buffer()
       request.body?.writeTo(buffer)
-      buffer.readUtf8()
+      val totalSize = buffer.size
+      val isTruncated = totalSize > limit
+      val body = buffer.readUtf8(minOf(totalSize, limit))
+      if (isTruncated) "$body\n[... truncated — $totalSize bytes total]" else body
     } catch (e: Exception) {
       null
     }
@@ -114,12 +124,23 @@ class NetworkToolsInterceptor : Interceptor {
 
   private fun captureResponseBody(response: Response): String? {
     return try {
-      val source = response.body?.source()
-      source?.request(Long.MAX_VALUE)
-      val buffer = source?.buffer
-      buffer?.clone()?.readUtf8()
+      val contentType = response.body?.contentType()?.toString().orEmpty()
+      if (isBinaryContentType(contentType)) return "[binary content — not captured]"
+
+      val source = response.body?.source() ?: return null
+      val limit = NetworkToolsManager.maxBodyCaptureBytes
+      // Request one extra byte so we can detect truncation without consuming it
+      source.request(limit + 1)
+      val buffer = source.buffer
+      val isTruncated = buffer.size > limit
+      val capturedBytes = minOf(buffer.size, limit).toInt()
+      val body = buffer.snapshot().substring(0, capturedBytes).utf8()
+      if (isTruncated) "$body\n[... truncated]" else body
     } catch (e: Exception) {
       null
     }
   }
+
+  private fun isBinaryContentType(contentType: String): Boolean =
+    binaryContentTypePrefixes.any { contentType.startsWith(it) }
 }

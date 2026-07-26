@@ -10,10 +10,14 @@ import okhttp3.OkHttpClient
 object NetworkToolsManager {
   private val interceptor = NetworkToolsInterceptor()
 
+  /** Maximum bytes captured per request/response body. Default: 256 KB. */
+  @JvmField
+  var maxBodyCaptureBytes: Long = 256 * 1024L
+
   /**
    * Add the NetworkTools interceptor to an OkHttpClient.Builder
    * This method should be called when configuring your OkHttpClient
-   * 
+   *
    * Example usage:
    * ```
    * val client = OkHttpClient.Builder()
