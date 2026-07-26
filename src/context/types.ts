@@ -51,6 +51,7 @@ export interface NetworkMonitorProviderProps {
   children: ReactNode;
   maxRequests?: number;
   showFloatingMonitor?: boolean;
+  maxBodyCaptureBytes?: number;
 }
 
 export const sample = {

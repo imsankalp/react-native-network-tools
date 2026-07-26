@@ -20,6 +20,8 @@ export const getNetworkRequestById = (id: string): string =>
 export const clearNetworkRequests = (): void => NetworkTools.clearAllRequests();
 export const getNetworkRequestCount = (): number =>
   NetworkTools.getRequestCount();
+export const setMaxBodyCaptureBytes = (bytes: number): void =>
+  NetworkTools.setMaxBodyCaptureBytes(bytes);
 export const getAllRequests = getAllNetworkRequests;
 export const getRequestById = getNetworkRequestById;
 export const clearAllRequests = clearNetworkRequests;
@@ -91,6 +93,7 @@ const ReactNativeNetworkTools = {
   getRequestById: getNetworkRequestById,
   clearAllRequests: clearNetworkRequests,
   getRequestCount: getNetworkRequestCount,
+  setMaxBodyCaptureBytes,
   getNetworkToolsRuntime,
   isNativeNetworkToolsAvailable,
   annotateNetworkRequestError,

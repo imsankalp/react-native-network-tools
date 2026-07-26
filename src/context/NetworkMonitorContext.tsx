@@ -28,6 +28,7 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   children,
   maxRequests = 1000,
   showFloatingMonitor = true,
+  maxBodyCaptureBytes,
 }) => {
   const [requests, setRequests] = useState<NetworkRequest[]>([]);
   const emitterRef = useRef<NativeEventEmitter | null>(null);
@@ -36,6 +37,13 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   useEffect(() => {
     networkStore.setMaxRequests(maxRequests);
   }, [maxRequests]);
+
+  // Propagate body capture limit to native
+  useEffect(() => {
+    if (maxBodyCaptureBytes !== undefined) {
+      NetworkTools.setMaxBodyCaptureBytes(maxBodyCaptureBytes);
+    }
+  }, [maxBodyCaptureBytes]);
 
   // Subscribe to store changes
   useEffect(() => {

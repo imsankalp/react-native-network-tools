@@ -9,6 +9,7 @@ export interface Spec extends TurboModule {
   getRequestById(id: string): string;
   clearAllRequests(): void;
   getRequestCount(): number;
+  setMaxBodyCaptureBytes(bytes: number): void;
   addListener(eventType: string): void;
   removeListeners(count: number): void;
 }
@@ -54,6 +55,9 @@ const unavailableModule: Spec = {
   getRequestCount() {
     warnUnavailable('getRequestCount');
     return 0;
+  },
+  setMaxBodyCaptureBytes() {
+    warnUnavailable('setMaxBodyCaptureBytes');
   },
   addListener() {
     warnUnavailable('addListener');
