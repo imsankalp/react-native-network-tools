@@ -37,6 +37,11 @@ class NetworkToolsLegacyModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun setMaxBodyCaptureBytes(bytes: Double) {
+    NetworkToolsManager.maxBodyCaptureBytes = bytes.toLong()
+  }
+
+  @ReactMethod
   fun addListener(eventType: String?) {}
 
   @ReactMethod

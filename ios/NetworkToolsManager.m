@@ -13,6 +13,7 @@ static NSString *const kNTEventName = @"NetworkTools:onRequest";
   static dispatch_once_t token;
   dispatch_once(&token, ^{
     instance = [[self alloc] init];
+    instance->_maxBodyCaptureBytes = 256 * 1024;
   });
   return instance;
 }

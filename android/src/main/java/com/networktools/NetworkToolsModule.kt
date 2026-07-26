@@ -39,6 +39,10 @@ class NetworkToolsModule(reactContext: ReactApplicationContext) :
     return NetworkToolsModuleDelegate.getRequestCount()
   }
 
+  override fun setMaxBodyCaptureBytes(bytes: Double) {
+    NetworkToolsManager.maxBodyCaptureBytes = bytes.toLong()
+  }
+
   override fun addListener(eventType: String?) {
 
   }

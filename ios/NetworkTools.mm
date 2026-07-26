@@ -63,6 +63,10 @@ RCT_EXPORT_MODULE(NetworkTools)
   return @([[NetworkToolsStorage shared] count]);
 }
 
+- (void)setMaxBodyCaptureBytes:(double)bytes {
+  [NetworkToolsManager shared].maxBodyCaptureBytes = (NSInteger)bytes;
+}
+
 // addListener / removeListeners are inherited from RCTEventEmitter and satisfy
 // the NativeNetworkToolsSpec protocol — no override needed.
 

@@ -18,6 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (class, nonatomic, readonly) NetworkToolsManager *shared;
 
+/** Maximum bytes captured per request/response body. Default: 256 KB. */
+@property (nonatomic, assign) NSInteger maxBodyCaptureBytes;
+
 /**
  * Registers the URLProtocol interceptor. No-op in release builds — the entire
  * method body is compiled out with #if DEBUG.
