@@ -4,7 +4,10 @@
 #import <objc/runtime.h>
 
 static NSString *const kNTHandledKey = @"NetworkToolsHandled";
-static const NSInteger kNTMaxBodyBytes = 256 * 1024;
+
+static NSInteger ntMaxBodyBytes(void) {
+  return [NetworkToolsManager shared].maxBodyCaptureBytes;
+}
 
 // Original IMP saved during swizzle so we can call through to it.
 static IMP gOriginalProtocolClassesIMP = nil;
@@ -197,7 +200,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   uint8_t chunk[4096];
   NSInteger bytesRead;
   NSInteger totalRead = 0;
-  while (totalRead < kNTMaxBodyBytes &&
+  while (totalRead < ntMaxBodyBytes() &&
          (bytesRead = [stream read:chunk maxLength:sizeof(chunk)]) > 0) {
     [buffer appendBytes:chunk length:(NSUInteger)bytesRead];
     totalRead += bytesRead;
@@ -208,9 +211,9 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 
 - (nullable NSString *)bodyStringFromData:(NSData *)data {
   if (data.length == 0) return nil;
-  NSData *capped = data.length <= (NSUInteger)kNTMaxBodyBytes
+  NSData *capped = data.length <= (NSUInteger)ntMaxBodyBytes()
     ? data
-    : [data subdataWithRange:NSMakeRange(0, (NSUInteger)kNTMaxBodyBytes)];
+    : [data subdataWithRange:NSMakeRange(0, (NSUInteger)ntMaxBodyBytes())];
   return [[NSString alloc] initWithData:capped encoding:NSUTF8StringEncoding];
 }
 
@@ -226,13 +229,13 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 
   if (self.responseData.length == 0) return @"";
 
-  NSData *capped = self.responseData.length <= (NSUInteger)kNTMaxBodyBytes
+  NSData *capped = self.responseData.length <= (NSUInteger)ntMaxBodyBytes()
     ? self.responseData
-    : [self.responseData subdataWithRange:NSMakeRange(0, (NSUInteger)kNTMaxBodyBytes)];
+    : [self.responseData subdataWithRange:NSMakeRange(0, (NSUInteger)ntMaxBodyBytes())];
 
   NSString *body = [[NSString alloc] initWithData:capped encoding:NSUTF8StringEncoding] ?: @"";
 
-  if (self.responseData.length > (NSUInteger)kNTMaxBodyBytes) {
+  if (self.responseData.length > (NSUInteger)ntMaxBodyBytes()) {
     body = [body stringByAppendingFormat:@"\n[... truncated — %lu bytes total]",
             (unsigned long)self.responseData.length];
   }
