@@ -45,13 +45,30 @@ export type NetworkMonitorContextType = {
   annotateRequestError: (
     input: AnnotateNetworkRequestErrorInput
   ) => string | null;
+  revealRedactedHeaders: boolean;
 };
+
+export const DEFAULT_REDACT_HEADERS = [
+  'Authorization',
+  'Cookie',
+  'Set-Cookie',
+  'X-Api-Key',
+  'X-Auth-Token',
+  'X-Access-Token',
+  'Proxy-Authorization',
+];
 
 export interface NetworkMonitorProviderProps {
   children: ReactNode;
   maxRequests?: number;
   showFloatingMonitor?: boolean;
   maxBodyCaptureBytes?: number;
+  /** Replaces the default redact list entirely. */
+  redactHeaders?: string[];
+  /** Appended to the default redact list without replacing it. */
+  additionalRedactHeaders?: string[];
+  /** When false, [redacted] values are shown with no reveal gesture. Default: true. */
+  revealRedactedHeaders?: boolean;
 }
 
 export const sample = {
