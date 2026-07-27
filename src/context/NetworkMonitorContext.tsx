@@ -17,6 +17,7 @@ import type {
   NetworkMonitorProviderProps,
   NetworkRequest,
 } from './types';
+import { DEFAULT_REDACT_HEADERS } from './types';
 
 const NetworkMonitorContext = createContext<
   NetworkMonitorContextType | undefined
@@ -29,6 +30,9 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   maxRequests = 1000,
   showFloatingMonitor = true,
   maxBodyCaptureBytes,
+  redactHeaders,
+  additionalRedactHeaders,
+  revealRedactedHeaders = true,
 }) => {
   const [requests, setRequests] = useState<NetworkRequest[]>([]);
   const emitterRef = useRef<NativeEventEmitter | null>(null);
@@ -44,6 +48,14 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
       NetworkTools.setMaxBodyCaptureBytes(maxBodyCaptureBytes);
     }
   }, [maxBodyCaptureBytes]);
+
+  // Propagate header redact list to native
+  useEffect(() => {
+    const effectiveList = redactHeaders
+      ? redactHeaders
+      : [...DEFAULT_REDACT_HEADERS, ...(additionalRedactHeaders ?? [])];
+    NetworkTools.setRedactHeaders(effectiveList);
+  }, [redactHeaders, additionalRedactHeaders]);
 
   // Subscribe to store changes
   useEffect(() => {
@@ -121,8 +133,16 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
       clearRequests,
       getRequestById,
       annotateRequestError,
+      revealRedactedHeaders,
     }),
-    [requests, addRequest, clearRequests, getRequestById, annotateRequestError]
+    [
+      requests,
+      addRequest,
+      clearRequests,
+      getRequestById,
+      annotateRequestError,
+      revealRedactedHeaders,
+    ]
   );
 
   return (
