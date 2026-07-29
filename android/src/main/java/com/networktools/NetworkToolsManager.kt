@@ -14,6 +14,10 @@ object NetworkToolsManager {
   @JvmField
   var maxBodyCaptureBytes: Long = 256 * 1024L
 
+  /** Header names (case-insensitive) whose values are replaced with "[redacted]". */
+  @Volatile
+  var redactHeaders: Set<String> = emptySet()
+
   /**
    * Add the NetworkTools interceptor to an OkHttpClient.Builder
    * This method should be called when configuring your OkHttpClient

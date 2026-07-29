@@ -3,6 +3,7 @@ package com.networktools
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableArray
 import com.networktools.interceptor.NetworkToolsEventEmitter
 
 class NetworkToolsLegacyModule(reactContext: ReactApplicationContext) :
@@ -39,6 +40,15 @@ class NetworkToolsLegacyModule(reactContext: ReactApplicationContext) :
   @ReactMethod
   fun setMaxBodyCaptureBytes(bytes: Double) {
     NetworkToolsManager.maxBodyCaptureBytes = bytes.toLong()
+  }
+
+  @ReactMethod
+  fun setRedactHeaders(headers: ReadableArray) {
+    val set = mutableSetOf<String>()
+    for (i in 0 until headers.size()) {
+      headers.getString(i)?.lowercase()?.let { set.add(it) }
+    }
+    NetworkToolsManager.redactHeaders = set
   }
 
   @ReactMethod

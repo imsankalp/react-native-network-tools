@@ -1,6 +1,7 @@
 package com.networktools
 
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.module.annotations.ReactModule
 import com.networktools.interceptor.NetworkToolsEventEmitter
 
@@ -41,6 +42,14 @@ class NetworkToolsModule(reactContext: ReactApplicationContext) :
 
   override fun setMaxBodyCaptureBytes(bytes: Double) {
     NetworkToolsManager.maxBodyCaptureBytes = bytes.toLong()
+  }
+
+  override fun setRedactHeaders(headers: ReadableArray) {
+    val set = mutableSetOf<String>()
+    for (i in 0 until headers.size()) {
+      headers.getString(i)?.lowercase()?.let { set.add(it) }
+    }
+    NetworkToolsManager.redactHeaders = set
   }
 
   override fun addListener(eventType: String?) {

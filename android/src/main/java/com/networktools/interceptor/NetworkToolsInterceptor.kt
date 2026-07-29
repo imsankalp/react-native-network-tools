@@ -90,9 +90,11 @@ class NetworkToolsInterceptor : Interceptor {
   }
 
   private fun captureHeaders(request: Request): Map<String, String> {
+    val redact = NetworkToolsManager.redactHeaders
     val headers = mutableMapOf<String, String>()
     request.headers.forEach { pair ->
-      headers[pair.first] = pair.second
+      headers[pair.first] =
+        if (pair.first.lowercase() in redact) "[redacted]" else pair.second
     }
     return headers
   }
@@ -115,9 +117,11 @@ class NetworkToolsInterceptor : Interceptor {
   }
 
   private fun captureResponseHeaders(response: Response): Map<String, String> {
+    val redact = NetworkToolsManager.redactHeaders
     val headers = mutableMapOf<String, String>()
     response.headers.forEach { pair ->
-      headers[pair.first] = pair.second
+      headers[pair.first] =
+        if (pair.first.lowercase() in redact) "[redacted]" else pair.second
     }
     return headers
   }
