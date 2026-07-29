@@ -111,6 +111,10 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
+    // Full implementation in debug; no-op stub in release (zero footprint in production APK)
+    // debugImplementation project(':react-native-network-tools')      // handled by autolink
+    releaseImplementation project(':react-native-network-tools-no-op')
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

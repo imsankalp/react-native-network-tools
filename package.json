@@ -17,6 +17,7 @@
     "plugin",
     "lib",
     "android",
+    "android-no-op",
     "ios",
     "cpp",
     "app.plugin.js",

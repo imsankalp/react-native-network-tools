@@ -37,7 +37,30 @@ yarn add react-native-gesture-handler react-native-reanimated react-native-safe-
 
 ### Android — hook the interceptor
 
-In `MainApplication.kt`, register the OkHttp interceptor **before** any requests are made:
+#### 1. Register the no-op artifact (recommended)
+
+The library ships an `android-no-op` variant that replaces every implementation class with empty stubs in release builds, so **no interceptor, storage, or event-emitter code is compiled into your production APK**.
+
+In `android/settings.gradle`, include the no-op module alongside your app:
+
+```gradle
+include ':react-native-network-tools-no-op'
+project(':react-native-network-tools-no-op').projectDir =
+    new File(rootProject.projectDir, '../node_modules/react-native-network-tools/android-no-op')
+```
+
+In `android/app/build.gradle`, swap the autolinked debug implementation for the no-op in release:
+
+```gradle
+dependencies {
+    // debugImplementation is handled automatically by autolink
+    releaseImplementation project(':react-native-network-tools-no-op')
+}
+```
+
+#### 2. Hook the interceptor in `MainApplication.kt`
+
+With the no-op artifact in place you no longer need the `if (BuildConfig.DEBUG)` guard — `NetworkToolsManager.addInterceptor` is a no-op in release builds automatically:
 
 ```kotlin
 import com.facebook.react.modules.network.NetworkingModule
@@ -49,19 +72,24 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
 
-    if (BuildConfig.DEBUG) {
-      NetworkingModule.setCustomClientBuilder(
-        object : NetworkingModule.CustomClientBuilder {
-          override fun apply(builder: OkHttpClient.Builder) {
-            NetworkToolsManager.addInterceptor(builder)
-          }
+    NetworkingModule.setCustomClientBuilder(
+      object : NetworkingModule.CustomClientBuilder {
+        override fun apply(builder: OkHttpClient.Builder) {
+          NetworkToolsManager.addInterceptor(builder)
         }
-      )
-    }
+      }
+    )
 
     // rest of your setup
   }
 }
+```
+
+You can verify the production APK contains no library classes with:
+
+```bash
+apkanalyzer dex packages --defined-only app-release.apk | grep networktools
+# should produce no output
 ```
 
 ### iOS — activate the URLProtocol interceptor
@@ -242,9 +270,16 @@ type NetworkRequest = {
 
 ## Build configuration
 
-Tracking is enabled only when `BuildConfig.NETWORK_TOOLS_ENABLED` is `true`. Override per build type in `android/app/build.gradle`:
+### Recommended: no-op artifact (zero production footprint)
+
+Follow the [Android setup](#android--hook-the-interceptor) instructions to include `react-native-network-tools-no-op` as your `releaseImplementation`. This ensures no library bytecode ships in your production APK — no `NetworkToolsInterceptor`, no `NetworkRequestStorage`, no `NetworkToolsEventEmitter`.
+
+### Alternative: `BuildConfig` flag only
+
+If you cannot use the no-op artifact, you can suppress runtime activity via a build config field. The library classes will still be compiled into the release APK but will be dormant:
 
 ```gradle
+// android/app/build.gradle
 buildTypes {
   debug {
     buildConfigField "boolean", "NETWORK_TOOLS_ENABLED", "true"

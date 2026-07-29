@@ -4,3 +4,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 rootProject.name = 'networktools.example'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
+
+// No-op artifact — included so the example app can demonstrate the release variant
+include ':react-native-network-tools-no-op'
+project(':react-native-network-tools-no-op').projectDir = new File(rootProject.projectDir, '../../android-no-op')
