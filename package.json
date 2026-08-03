@@ -86,9 +86,6 @@
     "react": "19.1.0",
     "react-native": "0.81.1",
     "react-native-builder-bob": "^0.40.13",
-    "react-native-gesture-handler": "^2.20.2",
-    "react-native-reanimated": "^3.17.4",
-    "react-native-safe-area-context": "^5.6.2",
     "release-it": "^19.0.4",
     "turbo": "^2.5.6",
     "typescript": "^5.9.2"
@@ -96,23 +93,11 @@
   "peerDependencies": {
     "expo": ">=50.0.0",
     "react": "*",
-    "react-native": "*",
-    "react-native-gesture-handler": ">=2.0.0",
-    "react-native-reanimated": ">=3.0.0",
-    "react-native-safe-area-context": ">=4.0.0"
+    "react-native": "*"
   },
   "peerDependenciesMeta": {
     "expo": {
       "optional": true
-    },
-    "react-native-gesture-handler": {
-      "optional": false
-    },
-    "react-native-reanimated": {
-      "optional": false
-    },
-    "react-native-safe-area-context": {
-      "optional": false
     }
   },
   "workspaces": [

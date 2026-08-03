@@ -44,9 +44,6 @@ export {
   NetworkLoggerErrorBoundary,
 };
 
-// Components
-export { default as FloatingNetworkMonitor } from './components/floating-network-monitor';
-
 // Store (for advanced usage)
 export { networkStore };
 
@@ -102,6 +99,7 @@ const ReactNativeNetworkTools = {
   useErrorSubscription,
   NetworkLoggerErrorBoundary,
   NetworkMonitorProvider,
+
   useNetworkMonitor,
 };
 
