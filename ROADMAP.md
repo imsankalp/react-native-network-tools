@@ -32,7 +32,7 @@
 - Native module bridge (`NativeNetworkTools.ts`), context, store, hooks, analytics, and util layers are untouched and compile cleanly in isolation
 - No reference to `reanimated`, `gesture-handler`, or `safe-area-context` remains in any source file under `src/`
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -63,7 +63,7 @@
 - All types are exported from `src/navigation/types.ts` as named exports
 - No runtime code in this file — types only
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -84,7 +84,7 @@
 - `layout.ts` and `animation.ts` compile cleanly and export all constants as named exports
 - No magic numbers appear anywhere in Phase 1+ components — every constant is imported from config
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
