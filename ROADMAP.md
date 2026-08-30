@@ -115,7 +115,7 @@
 - `POP` on a single-item stack returns the same state reference (no unnecessary re-render)
 - Unit tests cover all action types including edge cases (double pop, push then pop returns root)
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -136,7 +136,7 @@
 - `canGoBack` is `true` only when current tab's stack depth > 1
 - `currentScreen` always equals `stacks[activeTab][stacks[activeTab].length - 1]`
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -157,7 +157,7 @@
 - `ScreenRenderer` does not accept any props — reads exclusively from `NavigatorContext`
 - No conditional rendering logic lives here — only the registry lookup and render call
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -183,7 +183,7 @@
 - Rapid push/pop does not break UI position (animation is cancelled and re-started cleanly)
 - `useNativeDriver: true` confirmed in all `Animated` calls
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -350,28 +350,44 @@
 
 ## Phase 3 — Shell Architecture
 
-> **Goal:** Build the two-Modal shell structure (FloatingButton + NetworkPanel) and wire them to the NetworkMonitorContext. After this phase, the full inspector is functional end-to-end with placeholder screens.
+> **Goal:** Build the dual-trigger shell (DevSettings menu item + optional FloatingButton) and the NetworkPanel Modal. The shell supports three trigger modes: `dev-menu` (zero UI, uses shake/Cmd+D), `floating` (visible FAB), and `both` (default). After this phase, the full inspector is functional end-to-end with placeholder screens.
+
+---
+
+### Trigger Mode Reference
+
+| `triggerMode` | Dev builds | Production builds |
+|---|---|---|
+| `"dev-menu"` | DevSettings menu item only — zero UI | `DevSettings` unavailable; panel cannot be opened |
+| `"floating"` | FloatingButton only | FloatingButton visible (host app controls via `showFloatingMonitor`) |
+| `"both"` **(default)** | DevSettings + FloatingButton | FloatingButton only (DevSettings stripped by RN at build time) |
+
+> **Shake in production:** `DevSettings` is stripped from production binaries by React Native at the native level — there is no way to enable it in release builds from JavaScript. The FloatingButton is the production-capable trigger. Hosts can hide it in production with `showFloatingMonitor={__DEV__}`.
 
 ---
 
 ### Task 3.1 — NetworkMonitorShell
 
-**Objective:** The root UI coordinator — owns `isExpanded` state and renders the two Modals.
+**Objective:** The root UI coordinator — owns `isVisible` state, registers the DevSettings menu item, and conditionally renders Modal A (FAB) and Modal B (Panel) based on `triggerMode`.
 
 **Scope:**
 - Create `src/components/network-monitor-shell/index.tsx`
-- Reads `showFloatingMonitor` from `NetworkMonitorContext`
-- Owns `isExpanded: boolean` state
-- Renders **Modal A** (FAB Modal): `visible={showFloatingMonitor}`, `transparent`, `animationType="none"`, `statusBarTranslucent`, wrapper `View` with `pointerEvents="box-none"`
-- Renders **Modal B** (Panel Modal): `visible={isExpanded}`, `transparent`, `animationType="none"`, `statusBarTranslucent`, `onRequestClose={() => setIsExpanded(false)}`
-- Effect: `if (!showFloatingMonitor && isExpanded) setIsExpanded(false)`
+- Props: `triggerMode: 'dev-menu' | 'floating' | 'both'` (default `'both'`), `showFloatingMonitor: boolean`
+- Owns `isVisible: boolean` state (controls Modal B)
+- Uses a stable `openRef = useRef(() => setIsVisible(true))` — updated every render so the DevSettings handler never holds a stale closure
+- Registers `DevSettings.addMenuItem('Open Network Monitor 🔍', () => openRef.current())` inside `useEffect` guarded by `if (!__DEV__) return` and `if (triggerMode === 'floating') return` — registered once on mount, never re-registered
+- **Modal A** (FAB Modal): rendered only when `showFloatingMonitor && (triggerMode === 'floating' || triggerMode === 'both')` — `visible={true}`, `transparent`, `animationType="none"`, `statusBarTranslucent`, wrapper `View` with `pointerEvents="box-none"`
+- **Modal B** (Panel Modal): always declared, `visible={isVisible}`, `transparent`, `animationType="none"`, `statusBarTranslucent`, `onRequestClose={() => setIsVisible(false)}`
+- Effect: when `showFloatingMonitor` flips to `false`, close any open panel — `if (!showFloatingMonitor && isVisible) setIsVisible(false)`
 
 **Acceptance Criteria:**
-- Modal A is always mounted while `showFloatingMonitor` is true, even when `isExpanded` is true
-- Modal B is mounted/unmounted on each open/close — ensures fresh state per session
-- Android back button (via `onRequestClose`) closes the panel
-- Toggling `showFloatingMonitor` to false while panel is open closes the panel gracefully
-- Zero UI is rendered when `showFloatingMonitor` is false
+- `triggerMode="dev-menu"`: Modal A is never mounted; DevSettings item registered once in `__DEV__`
+- `triggerMode="floating"`: Modal A mounted when `showFloatingMonitor` is true; no DevSettings call made
+- `triggerMode="both"`: Modal A mounted and DevSettings registered — both triggers work independently
+- Modal B mounts/unmounts on each open/close (not just hidden) — fresh Navigator state per session
+- Android back button (`onRequestClose`) closes the panel in all trigger modes
+- `showFloatingMonitor={false}` with any triggerMode renders zero visible UI
+- In production builds, `DevSettings` guard (`!__DEV__`) prevents any call to the stripped module
 
 **Status:** [ ] Pending
 
@@ -379,25 +395,26 @@
 
 ### Task 3.2 — FloatingButton
 
-**Objective:** The draggable floating action button using `PanResponder` and `Animated.ValueXY`.
+**Objective:** The draggable floating action button using `PanResponder` and `Animated.ValueXY`. Only rendered when `triggerMode` is `'floating'` or `'both'` — it is the production-capable trigger.
 
 **Scope:**
 - Create `src/components/floating-button/index.tsx`
 - Props: `onPress: () => void`
-- `Animated.ValueXY` initialized to default position (bottom-right)
+- `Animated.ValueXY` initialized to default position (bottom-right corner with `FLOATING_BUTTON_DEFAULT_RIGHT_OFFSET` and `FLOATING_BUTTON_DEFAULT_Y_FRACTION` from layout config)
 - `PanResponder` configured with grant/move/release/terminate handlers
-- `snapToEdge()`: snaps X to nearest edge, clamps Y within safe bounds, uses `Animated.spring`
+- `snapToEdge()`: snaps X to nearest edge, clamps Y within safe bounds, uses `Animated.spring` with `BUTTON_SNAP_TENSION` / `BUTTON_SNAP_FRICTION` from animation config
 - Safe top = `Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 44`
 - Safe bottom = `Platform.OS === 'ios' ? 34 : 0`
 - Tap vs drag discrimination: `Math.sqrt(dx² + dy²) < TAP_DISTANCE_THRESHOLD`
+- Position stored in `useRef` — survives parent re-renders without resetting to default
 
 **Acceptance Criteria:**
-- Dragging by more than `TAP_DISTANCE_THRESHOLD` pixels does not trigger `onPress`
+- Dragging beyond `TAP_DISTANCE_THRESHOLD` pixels does not trigger `onPress`
 - Tapping (drag distance below threshold) always triggers `onPress`
 - After drag release, button always snaps to left or right edge — never floats in the middle
 - Button never goes above safe top or below safe bottom
-- `onPanResponderTerminate` prevents stuck-dragging after system interrupt
-- Button position is preserved in `useRef` — survives parent re-renders
+- `onPanResponderTerminate` prevents stuck-dragging after system interrupt (incoming call, notification)
+- Works identically in both dev and production builds — no `__DEV__` branches inside this component
 
 **Status:** [ ] Pending
 
@@ -427,18 +444,23 @@
 
 ### Task 3.4 — Provider Integration
 
-**Objective:** Wire `NetworkMonitorShell` into `NetworkMonitorProvider` and remove all references to old components.
+**Objective:** Wire `NetworkMonitorShell` into `NetworkMonitorProvider`, expose `triggerMode` as a provider prop, and remove the `_showFloatingMonitor` placeholder added in Task 0.1.
 
 **Scope:**
-- Update `src/context/NetworkMonitorContext.tsx`: replace existing `FloatingNetworkMonitor` render with `NetworkMonitorShell`
-- Update `src/index.tsx`: remove exports of deleted components; keep all data-layer and hook exports unchanged
-- Verify `NetworkMonitorProvider` public API (props interface) is unchanged
+- Add `triggerMode?: 'dev-menu' | 'floating' | 'both'` to `NetworkMonitorProviderProps` in `src/context/types.ts` (default `'both'`)
+- Update `src/context/NetworkMonitorContext.tsx`:
+  - Restore `showFloatingMonitor` (remove the `_` prefix)
+  - Destructure `triggerMode = 'both'` from props
+  - Replace the placeholder comment with `<NetworkMonitorShell triggerMode={triggerMode} showFloatingMonitor={showFloatingMonitor} />`
+- Update `src/index.tsx`: export the `TriggerMode` type for host app TypeScript consumers
+- Verify `NetworkMonitorProvider` existing props (`showFloatingMonitor`, `maxRequests`, `redactHeaders`, etc.) are unchanged
 
 **Acceptance Criteria:**
 - `yarn build` completes with zero TypeScript errors
-- All existing public exports in `src/index.tsx` that are part of the documented API still resolve
-- Wrapping any app with `NetworkMonitorProvider` renders the floating button without any additional setup
-- `showFloatingMonitor={false}` prop renders nothing — zero UI footprint
+- `triggerMode` defaults to `'both'` — existing host apps with no prop change get DevSettings + FloatingButton without any code change
+- `showFloatingMonitor={false}` with any `triggerMode` renders zero visible UI
+- `triggerMode="dev-menu"` produces no visible UI on screen — only the DevSettings menu item
+- Host app TypeScript consumers can import and type `triggerMode` without casting
 
 **Status:** [ ] Pending
 
@@ -628,14 +650,14 @@
 
 ### Task 5.2 — Example App Validation (Bare RN)
 
-**Objective:** Validate the full revamped UI in the bare React Native example app.
+**Objective:** Validate the full revamped UI in the bare React Native example app across both trigger modes.
 
 **Scope:**
 - Remove `GestureHandlerRootView`, reanimated plugin, and safe area provider setup from `example/`
-- Manual validation checklist:
+- Manual validation checklist — **FloatingButton trigger** (`triggerMode="floating"` or `"both"`):
   - Floating button appears at startup
   - Drag to reposition — snaps to edges
-  - Tap opens the panel (Modal B above any existing UI)
+  - Tap opens the panel (Modal B above any existing UI, including host app Modals)
   - Request list populates in real time
   - Tapping a request opens detail
   - All four detail tabs render correctly
@@ -645,11 +667,18 @@
   - All four root tabs are tappable
   - Android back button closes panel
   - App UI is not blocked when panel is closed
+- Manual validation checklist — **DevSettings trigger** (`triggerMode="dev-menu"` or `"both"`):
+  - No floating button visible on screen
+  - Dev menu (shake / `Cmd+D` / `Cmd+M`) shows "Open Network Monitor 🔍" item
+  - Tapping the menu item opens the panel
+  - All panel behaviour identical to FloatingButton checklist above
+- Validate `showFloatingMonitor={false}` renders nothing regardless of `triggerMode`
 
 **Acceptance Criteria:**
 - All checklist items pass on both iOS and Android
 - No RN warnings in Metro output related to this library
 - No crashes in any user flow
+- DevSettings item does not appear in a production/release build
 
 **Status:** [ ] Pending
 
@@ -712,7 +741,8 @@
              ├──→ 2.6                 │
              └──→ 2.7                 │
                                       ▼
-                             3.1 → 3.2, 3.3 → 3.4
+                    3.1 → 3.2 (optional, floating only) → 3.3 → 3.4
+                    │     └── skipped when triggerMode="dev-menu"
                                               │
                                               ▼
                                   4.1 → 4.2
