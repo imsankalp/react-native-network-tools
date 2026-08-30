@@ -1,8 +1,5 @@
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
-const {
-  wrapWithReanimatedMetroConfig,
-} = require('react-native-reanimated/metro-config');
 
 const MONOREPO_ROOT = path.resolve(__dirname, '..');
 
@@ -22,4 +19,4 @@ config.resolver.nodeModulesPaths = [
 // to src/ directly, enabling live editing without a yarn prepare step.
 config.resolver.unstable_conditionNames = ['source', 'require', 'default'];
 
-module.exports = wrapWithReanimatedMetroConfig(config);
+module.exports = config;

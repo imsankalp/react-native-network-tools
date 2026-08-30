@@ -7,8 +7,7 @@ import React, {
   useRef,
   useMemo,
 } from 'react';
-import { View, StyleSheet, NativeEventEmitter, Platform } from 'react-native';
-import FloatingNetworkMonitor from '../components/floating-network-monitor';
+import { NativeEventEmitter, Platform } from 'react-native';
 import NetworkTools from '../NativeNetworkTools';
 import { networkStore } from '../store/NetworkStore';
 import type {
@@ -28,7 +27,7 @@ const NETWORK_EVENT_NAME = 'NetworkTools:onRequest';
 export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   children,
   maxRequests = 1000,
-  showFloatingMonitor = true,
+  showFloatingMonitor: _showFloatingMonitor = true,
   maxBodyCaptureBytes,
   redactHeaders,
   additionalRedactHeaders,
@@ -148,11 +147,7 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   return (
     <NetworkMonitorContext.Provider value={contextValue}>
       {children}
-      {showFloatingMonitor && (
-        <View style={styles.floatingContainer} pointerEvents="box-none">
-          <FloatingNetworkMonitor />
-        </View>
-      )}
+      {/* NetworkMonitorShell (floating button + panel) is wired here in Task 3.4 */}
     </NetworkMonitorContext.Provider>
   );
 };
@@ -166,17 +161,5 @@ export const useNetworkMonitor = (): NetworkMonitorContextType => {
   }
   return context;
 };
-
-const styles = StyleSheet.create({
-  floatingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    pointerEvents: 'box-none',
-    zIndex: 9999,
-  },
-});
 
 export default NetworkMonitorContext;

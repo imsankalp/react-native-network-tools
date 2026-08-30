@@ -1,0 +1,23 @@
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { colors } from '../../../config/color';
+import { typography } from '../../../config/typography';
+
+// Full implementation: Task 4.2
+const RequestListScreen: React.FC = () => (
+  <View style={styles.container}>
+    <Text style={styles.label}>Request List</Text>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+  label: { ...typography.body, color: colors.textMuted },
+});
+
+export default RequestListScreen;

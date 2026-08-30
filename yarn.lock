@@ -12121,20 +12121,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-gesture-handler@npm:~2.24.0":
-  version: 2.24.0
-  resolution: "react-native-gesture-handler@npm:2.24.0"
-  dependencies:
-    "@egjs/hammerjs": ^2.0.17
-    hoist-non-react-statics: ^3.3.0
-    invariant: ^2.2.4
-  peerDependencies:
-    react: "*"
-    react-native: "*"
-  checksum: 65abaeef68180fee2811d01d88ff50c231a91faca05279222fcaaa55349e758b68a7d6a9ac3eddfb1887f6b4c4790ac195b99989f1ad8a2a1f3f3bdff3ba0a76
-  languageName: node
-  linkType: hard
-
 "react-native-is-edge-to-edge@npm:1.1.7":
   version: 1.1.7
   resolution: "react-native-is-edge-to-edge@npm:1.1.7"
@@ -12185,10 +12171,7 @@ __metadata:
     expo-status-bar: ~2.2.0
     react: 19.0.0
     react-native: 0.79.2
-    react-native-gesture-handler: ~2.24.0
     react-native-network-tools: "workspace:*"
-    react-native-reanimated: ~3.17.4
-    react-native-safe-area-context: 5.4.0
     typescript: ~5.8.3
   languageName: unknown
   linkType: soft
@@ -12249,9 +12232,6 @@ __metadata:
     react: 19.1.0
     react-native: 0.81.1
     react-native-builder-bob: ^0.40.13
-    react-native-gesture-handler: ^2.20.2
-    react-native-reanimated: ^3.17.4
-    react-native-safe-area-context: ^5.6.2
     release-it: ^19.0.4
     turbo: ^2.5.6
     typescript: ^5.9.2
@@ -12259,18 +12239,9 @@ __metadata:
     expo: ">=50.0.0"
     react: "*"
     react-native: "*"
-    react-native-gesture-handler: ">=2.0.0"
-    react-native-reanimated: ">=3.0.0"
-    react-native-safe-area-context: ">=4.0.0"
   peerDependenciesMeta:
     expo:
       optional: true
-    react-native-gesture-handler:
-      optional: false
-    react-native-reanimated:
-      optional: false
-    react-native-safe-area-context:
-      optional: false
   languageName: unknown
   linkType: soft
 
@@ -12295,40 +12266,6 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: d3e5e38c23bd0f86e19110c1e16353a3b58166cb3a13ec1b600b5bbe287d8c57ab199023231b7960fd11b5c605f2a78428d7b80f28818e74eaecde1360dec4f6
-  languageName: node
-  linkType: hard
-
-"react-native-reanimated@npm:~3.17.4":
-  version: 3.17.5
-  resolution: "react-native-reanimated@npm:3.17.5"
-  dependencies:
-    "@babel/plugin-transform-arrow-functions": ^7.0.0-0
-    "@babel/plugin-transform-class-properties": ^7.0.0-0
-    "@babel/plugin-transform-classes": ^7.0.0-0
-    "@babel/plugin-transform-nullish-coalescing-operator": ^7.0.0-0
-    "@babel/plugin-transform-optional-chaining": ^7.0.0-0
-    "@babel/plugin-transform-shorthand-properties": ^7.0.0-0
-    "@babel/plugin-transform-template-literals": ^7.0.0-0
-    "@babel/plugin-transform-unicode-regex": ^7.0.0-0
-    "@babel/preset-typescript": ^7.16.7
-    convert-source-map: ^2.0.0
-    invariant: ^2.2.4
-    react-native-is-edge-to-edge: 1.1.7
-  peerDependencies:
-    "@babel/core": ^7.0.0-0
-    react: "*"
-    react-native: "*"
-  checksum: fe667e4764f691b2e752eaedb7527fd8ac251637ae9e7dd9ab124abae85627839b5daea064befc5e09ca710ef673d5501ed11286eb39dfcb04f5d57b2d47e49c
-  languageName: node
-  linkType: hard
-
-"react-native-safe-area-context@npm:5.4.0":
-  version: 5.4.0
-  resolution: "react-native-safe-area-context@npm:5.4.0"
-  peerDependencies:
-    react: "*"
-    react-native: "*"
-  checksum: 7d7f9a8278048650fd207d436798bd062d6f78d771cb0665b92aef69dba870251339e6812e1d669fd1958345288bd0f9ac98fbfe353c13958d18b58dc946c341
   languageName: node
   linkType: hard
 

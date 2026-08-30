@@ -39,11 +39,11 @@ describe('expo-example-app configuration', () => {
       expect(deps).toHaveProperty('react-native-network-tools');
     });
 
-    it('includes required peer dependencies', () => {
+    it('does not depend on removed UI libraries', () => {
       const deps = pkg.dependencies as Record<string, string>;
-      expect(deps).toHaveProperty('react-native-gesture-handler');
-      expect(deps).toHaveProperty('react-native-reanimated');
-      expect(deps).toHaveProperty('react-native-safe-area-context');
+      expect(deps).not.toHaveProperty('react-native-gesture-handler');
+      expect(deps).not.toHaveProperty('react-native-reanimated');
+      expect(deps).not.toHaveProperty('react-native-safe-area-context');
     });
   });
 
