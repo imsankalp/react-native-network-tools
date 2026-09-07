@@ -43,21 +43,16 @@ export const NetworkMonitorShell: React.FC<NetworkMonitorShellProps> = ({
 
   return (
     <>
-      {/* Modal A — FAB layer. Always transparent, touch pass-through on wrapper. */}
+      {/* FAB layer — absolute overlay within the Provider's root View.
+          pointerEvents="box-none" lets all touches miss the button fall
+          through to the host app without a separate UIWindow (Modal). */}
       {showFab ? (
-        <Modal
-          visible={true}
-          transparent
-          animationType="none"
-          statusBarTranslucent
-        >
-          <View style={styles.fabLayer} pointerEvents="box-none">
-            <FloatingButton onPress={openPanel} />
-          </View>
-        </Modal>
+        <View style={styles.fabLayer} pointerEvents="box-none">
+          <FloatingButton onPress={openPanel} />
+        </View>
       ) : null}
 
-      {/* Modal B — Panel. Mounted fresh each session so Navigator state is clean. */}
+      {/* Panel — separate Modal so it overlays everything including other modals. */}
       {isVisible ? (
         <Modal
           visible={true}
@@ -74,5 +69,5 @@ export const NetworkMonitorShell: React.FC<NetworkMonitorShellProps> = ({
 };
 
 const styles = StyleSheet.create({
-  fabLayer: { flex: 1 },
+  fabLayer: StyleSheet.absoluteFillObject,
 });

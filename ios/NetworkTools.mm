@@ -67,6 +67,14 @@ RCT_EXPORT_MODULE(NetworkTools)
   [NetworkToolsManager shared].maxBodyCaptureBytes = (NSInteger)bytes;
 }
 
+- (void)setRedactHeaders:(NSArray<NSString *> *)headers {
+  NSMutableSet<NSString *> *lower = [NSMutableSet setWithCapacity:headers.count];
+  for (NSString *h in headers) {
+    [lower addObject:h.lowercaseString];
+  }
+  [NetworkToolsManager shared].redactHeaderNames = [lower copy];
+}
+
 // addListener / removeListeners are inherited from RCTEventEmitter and satisfy
 // the NativeNetworkToolsSpec protocol — no override needed.
 

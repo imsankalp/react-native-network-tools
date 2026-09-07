@@ -7,7 +7,7 @@ import React, {
   useRef,
   useMemo,
 } from 'react';
-import { NativeEventEmitter, Platform } from 'react-native';
+import { NativeEventEmitter, Platform, StyleSheet, View } from 'react-native';
 import NetworkTools from '../NativeNetworkTools';
 import { networkStore } from '../store/NetworkStore';
 import type {
@@ -148,14 +148,20 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
 
   return (
     <NetworkMonitorContext.Provider value={contextValue}>
-      {children}
-      <NetworkMonitorShell
-        triggerMode={triggerMode}
-        showFloatingMonitor={showFloatingMonitor}
-      />
+      <View style={styles.root}>
+        {children}
+        <NetworkMonitorShell
+          triggerMode={triggerMode}
+          showFloatingMonitor={showFloatingMonitor}
+        />
+      </View>
     </NetworkMonitorContext.Provider>
   );
 };
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
 
 export const useNetworkMonitor = (): NetworkMonitorContextType => {
   const context = useContext(NetworkMonitorContext);

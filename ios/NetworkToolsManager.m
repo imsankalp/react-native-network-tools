@@ -14,6 +14,7 @@ static NSString *const kNTEventName = @"NetworkTools:onRequest";
   dispatch_once(&token, ^{
     instance = [[self alloc] init];
     instance->_maxBodyCaptureBytes = 256 * 1024;
+    instance->_redactHeaderNames = [NSSet set];
   });
   return instance;
 }

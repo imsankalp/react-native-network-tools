@@ -172,6 +172,8 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   double responseTime = [NSDate date].timeIntervalSince1970 * 1000.0;
   double duration = responseTime - self.requestStartTime;
 
+  NSSet<NSString *> *redactSet = [NetworkToolsManager shared].redactHeaderNames;
+
   NSMutableDictionary *entry = [NSMutableDictionary dictionary];
   entry[@"id"]             = self.requestId;
   entry[@"url"]            = request.URL.absoluteString ?: @"";
@@ -179,12 +181,12 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   entry[@"requestTime"]    = @(self.requestStartTime);
   entry[@"responseTime"]   = @(responseTime);
   entry[@"duration"]       = @(duration);
-  entry[@"requestHeaders"] = request.allHTTPHeaderFields ?: @{};
+  entry[@"requestHeaders"] = [self redactHeaders:request.allHTTPHeaderFields ?: @{} using:redactSet];
   entry[@"requestBody"]    = self.capturedRequestBody ?: @"";
 
   NSHTTPURLResponse *response = self.httpResponse;
   entry[@"responseCode"]    = response ? @(response.statusCode) : @0;
-  entry[@"responseHeaders"] = response ? response.allHeaderFields : @{};
+  entry[@"responseHeaders"] = [self redactHeaders:(response ? response.allHeaderFields : @{}) using:redactSet];
   entry[@"responseBody"]    = [self responseBodyStringForResponse:response];
   entry[@"error"]           = error ? (error.localizedDescription ?: @"Unknown error") : @"";
 
@@ -193,6 +195,17 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 }
 
 #pragma mark - Helpers
+
+- (NSDictionary *)redactHeaders:(NSDictionary *)headers using:(NSSet<NSString *> *)redactSet {
+  if (redactSet.count == 0) return headers;
+  NSMutableDictionary *result = [NSMutableDictionary dictionaryWithCapacity:headers.count];
+  [headers enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+    NSString *lowerKey = [key respondsToSelector:@selector(lowercaseString)]
+      ? [key lowercaseString] : key;
+    result[key] = [redactSet containsObject:lowerKey] ? @"[redacted]" : value;
+  }];
+  return [result copy];
+}
 
 - (NSData *)drainStream:(NSInputStream *)stream {
   NSMutableData *buffer = [NSMutableData data];
