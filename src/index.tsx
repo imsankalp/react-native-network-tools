@@ -75,6 +75,7 @@ import type {
   NetworkRequest as ContextNetworkRequest,
   NetworkMonitorContextType,
   NetworkMonitorProviderProps,
+  TriggerMode,
 } from './context/types';
 
 export type {
@@ -82,6 +83,7 @@ export type {
   ContextNetworkRequest,
   NetworkMonitorContextType,
   NetworkMonitorProviderProps,
+  TriggerMode,
 };
 
 // Default export for backward compatibility

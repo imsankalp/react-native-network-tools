@@ -18,6 +18,7 @@
 **Objective:** Strip all three UI libraries from the package without breaking the native data layer.
 
 **Scope:**
+
 - Remove `react-native-reanimated`, `react-native-gesture-handler`, `react-native-safe-area-context` from `dependencies`, `peerDependencies`, and `devDependencies` in the root `package.json`
 - Remove the same from `example/package.json` and `example-expo/package.json`
 - Remove any setup code in example apps that bootstraps these libraries (`GestureHandlerRootView` wrapping, reanimated babel plugin, etc.)
@@ -27,6 +28,7 @@
 - Keep `src/asset/NetworkLogo.png` (decision deferred to Task 3.2)
 
 **Acceptance Criteria:**
+
 - `yarn install` completes with no peer dependency warnings related to the three removed packages
 - `yarn build` fails (expected — exports reference deleted components), but the failure is only import errors, not native/config errors
 - Native module bridge (`NativeNetworkTools.ts`), context, store, hooks, analytics, and util layers are untouched and compile cleanly in isolation
@@ -41,6 +43,7 @@
 **Objective:** Define the complete TypeScript types for the internal navigator so every screen component written in later phases is typed against a stable contract.
 
 **Scope:**
+
 - Create `src/navigation/types.ts`
 - Define `Tab` union type: `'requests' | 'websocket' | 'sessions' | 'insights'`
 - Define `Screen` discriminated union — all current and anticipated screens with their params:
@@ -58,6 +61,7 @@
 - Define `NavigatorContextType`: `{ activeTab, currentScreen, canGoBack, stackDepth, push, pop, switchTab, popToRoot }`
 
 **Acceptance Criteria:**
+
 - File compiles independently with zero TypeScript errors
 - Adding a new screen in the future requires only appending to the `Screen` union — no other type changes needed
 - All types are exported from `src/navigation/types.ts` as named exports
@@ -72,6 +76,7 @@
 **Objective:** Audit existing `color.ts`, `spacing.ts`, `typography.ts` and extend them to cover all UI patterns needed in the new design without breaking the existing token names.
 
 **Scope:**
+
 - Audit `src/config/color.ts` — add missing semantic tokens: `border`, `divider`, `tabBarBackground`, `tabBarActiveIndicator`, `overlayDim`, `inputBackground`, `placeholderText`
 - Audit `src/config/spacing.ts` — add `none: 0`, `hairline: StyleSheet.hairlineWidth`
 - Audit `src/config/typography.ts` — add `label` (12px, medium), `mono` (13px, monospace), `overline` (11px, uppercase)
@@ -79,6 +84,7 @@
 - Create `src/config/animation.ts` — constants: `PANEL_SLIDE_DURATION`, `STACK_PUSH_DURATION`, `STACK_POP_DURATION`, `BUTTON_SNAP_TENSION`, `BUTTON_SNAP_FRICTION`
 
 **Acceptance Criteria:**
+
 - All existing token names remain unchanged (no renames, no deletions)
 - All new tokens have an inline comment explaining their intended use case
 - `layout.ts` and `animation.ts` compile cleanly and export all constants as named exports
@@ -99,6 +105,7 @@
 **Objective:** Implement the pure state-management reducer for the navigator.
 
 **Scope:**
+
 - Create `src/navigation/reducer.ts`
 - Implement `navigatorReducer(state: NavigatorState, action: NavAction): NavigatorState`
 - Handle all four action types: `SWITCH_TAB`, `PUSH`, `POP`, `POP_TO_ROOT`
@@ -109,6 +116,7 @@
 - Define and export `createInitialState()` factory for testability
 
 **Acceptance Criteria:**
+
 - Reducer is a pure function — no side effects, no imports from React
 - All action types covered with no fallthrough
 - `SWITCH_TAB` to the same active tab is idempotent
@@ -124,6 +132,7 @@
 **Objective:** Provide the navigator state and dispatch actions to any descendant component via a React context hook.
 
 **Scope:**
+
 - Create `src/navigation/NavigatorContext.tsx`
 - Create context with `NavigatorContextType` (from Task 0.2)
 - Implement `NavigatorProvider` component: wraps `useReducer(navigatorReducer, INITIAL_STATE)` and derives `currentScreen`, `canGoBack`, `stackDepth` from state before providing via context
@@ -131,6 +140,7 @@
 - `push`, `pop`, `switchTab`, `popToRoot` are memoized with `useCallback` so context consumers don't re-render spuriously
 
 **Acceptance Criteria:**
+
 - `useNavigator()` outside provider throws: `"useNavigator must be called within NavigatorProvider"`
 - `push` and `pop` trigger exactly one re-render in consumers
 - `canGoBack` is `true` only when current tab's stack depth > 1
@@ -145,6 +155,7 @@
 **Objective:** Centralize the mapping from `Screen` discriminated union to React components. This is the only file modified when a new screen is added.
 
 **Scope:**
+
 - Create `src/navigation/ScreenRenderer.tsx`
 - Define `SCREEN_REGISTRY`: a record mapping every `Screen['name']` to a React component type
 - For screens whose feature modules don't exist yet, register a `PlaceholderScreen` component that renders the tab name and "Coming soon"
@@ -152,6 +163,7 @@
 - The TypeScript mapping must be exhaustive — adding a new entry to `Screen` union without registering it here produces a compile error
 
 **Acceptance Criteria:**
+
 - TypeScript reports an error if any `Screen['name']` is missing from `SCREEN_REGISTRY`
 - `PlaceholderScreen` renders without crashing for all unimplemented tabs
 - `ScreenRenderer` does not accept any props — reads exclusively from `NavigatorContext`
@@ -166,6 +178,7 @@
 **Objective:** Compose the reducer, context, and screen renderer into the `Navigator` component that manages the push/pop slide animation.
 
 **Scope:**
+
 - Create `src/navigation/Navigator.tsx`
 - Wraps `NavigatorProvider` around the screen content
 - Maintains a single `Animated.Value` for horizontal slide animation (`translateX`)
@@ -177,6 +190,7 @@
 - Exposes `navigatorRef` (forwarded ref) for imperative access if needed in the future
 
 **Acceptance Criteria:**
+
 - Push animation: screen slides in from right in `STACK_PUSH_DURATION`ms
 - Pop animation: screen slides out to right in `STACK_POP_DURATION`ms, old screen appears behind
 - Switching tabs: no animation, instant render
@@ -198,6 +212,7 @@
 **Objective:** Shared header bar rendered by the Navigator above every screen — back arrow (when applicable), title, and optional right-side action slot.
 
 **Scope:**
+
 - Create `src/components/StackHeader.tsx`
 - Props: `title: string`, `rightAction?: React.ReactNode`, `onBack?: () => void`
 - Reads `canGoBack` from `NavigatorContext` to determine if back arrow renders
@@ -207,13 +222,14 @@
 - Fixed height matches `STACK_HEADER_HEIGHT` from layout config
 
 **Acceptance Criteria:**
+
 - Back arrow visible only when `canGoBack === true`
 - `onBack` called exactly once per tap — no double-firing on rapid taps
 - `rightAction` renders without affecting title centering
 - `title` truncates correctly on narrow screens
 - No hardcoded colors, spacing, or font sizes — all from config tokens
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -222,6 +238,7 @@
 **Objective:** The top-level tab bar allowing switching between Requests, WebSocket, Sessions, and Insights.
 
 **Scope:**
+
 - Create `src/components/TabBar.tsx`
 - Props: `tabs: Array<{ key: Tab; label: string }>` — no hardcoded tab list
 - Reads `activeTab` from `NavigatorContext` and calls `switchTab` on press
@@ -231,13 +248,14 @@
 - Fixed height matches `TAB_BAR_HEIGHT` from layout config
 
 **Acceptance Criteria:**
+
 - Tapping inactive tab: switches tab with no animation
 - Tapping active tab at root: no-op (already at root)
 - Tapping active tab with stack depth > 1: pops to root
 - All four tabs accessible without horizontal scroll
 - Active tab indicator renders without layout shift on tab change
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -246,6 +264,7 @@
 **Objective:** Colored pill/chip component for HTTP method labels and status codes.
 
 **Scope:**
+
 - Create `src/components/Badge.tsx`
 - Props: `label: string`, `color: string`, `textColor?: string` (defaults to white), `size?: 'sm' | 'md'`
 - Uses existing `httpMethodConfig` for method colors — does not re-define them
@@ -253,12 +272,13 @@
 - No shadow, no border — solid background only
 
 **Acceptance Criteria:**
+
 - Renders correctly for all HTTP methods defined in `httpMethodConfig`
 - Renders correctly for status codes (200, 201, 301, 400, 401, 403, 404, 500)
 - `size="sm"` is visibly smaller than `size="md"` but both remain legible
 - No `Platform`-specific styles
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -267,6 +287,7 @@
 **Objective:** Renders a list of key-value pairs (HTTP headers, metadata fields) in a consistent, readable format.
 
 **Scope:**
+
 - Create `src/components/KeyValueTable.tsx`
 - Props: `data: Record<string, string> | Array<{ key: string; value: string }>`, `emptyMessage?: string`
 - Renders as a plain `View` with rows — not a `FlatList`
@@ -276,12 +297,13 @@
 - Empty state renders `emptyMessage` or a default "No headers"
 
 **Acceptance Criteria:**
+
 - Accepts both object and array input shapes
 - Long header values wrap without overflowing
 - Keys and values are visually distinguishable without color alone (weight difference)
 - Renders correctly with 0, 1, and 50+ items
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -290,6 +312,7 @@
 **Objective:** Display JSON body content in a formatted, readable way without a third-party syntax highlighter.
 
 **Scope:**
+
 - Create `src/components/JsonViewer.tsx`
 - Props: `raw: string | undefined | null`, `emptyMessage?: string`
 - Attempts `JSON.parse(raw)` — if successful, renders `JSON.stringify(parsed, null, 2)` in monospace `Text` wrapped in `ScrollView`
@@ -299,13 +322,14 @@
 - No interactive expand/collapse nodes — flat formatted string only
 
 **Acceptance Criteria:**
+
 - Valid JSON is always pretty-printed with 2-space indentation
 - Invalid JSON displays raw content without throwing
 - Horizontal scrolling enabled for wide JSON lines
 - Component renders correctly when `raw` changes between renders
 - Try/catch around `JSON.parse` — component never crashes on malformed input
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -314,16 +338,18 @@
 **Objective:** Consistent empty state display used across all list screens.
 
 **Scope:**
+
 - Create `src/components/EmptyState.tsx`
 - Props: `title: string`, `subtitle?: string`, `action?: { label: string; onPress: () => void }`
 - Centered layout, icon area is a styled `View` shape — no image assets
 
 **Acceptance Criteria:**
+
 - Renders in the center of its parent container (parent must be `flex: 1`)
 - Optional subtitle and action button render correctly when provided and absent when not
 - No images, no platform-specific code
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -332,6 +358,7 @@
 **Objective:** Text input for filtering request lists and session lists.
 
 **Scope:**
+
 - Create `src/components/SearchBar.tsx`
 - Props: `value: string`, `onChangeText: (text: string) => void`, `placeholder?: string`, `onClear?: () => void`
 - Plain `TextInput` from `react-native` wrapped in a styled container
@@ -339,12 +366,13 @@
 - `autoCapitalize="none"`, `autoCorrect={false}`, `returnKeyType="search"`, `clearButtonMode="never"`
 
 **Acceptance Criteria:**
+
 - Clear button only visible when input is non-empty
 - Tapping clear resets input and fires `onClear` if provided
 - `autoCapitalize` and `autoCorrect` disabled — critical for URL/header search
 - No platform-specific behavior differences between iOS and Android
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -356,11 +384,11 @@
 
 ### Trigger Mode Reference
 
-| `triggerMode` | Dev builds | Production builds |
-|---|---|---|
-| `"dev-menu"` | DevSettings menu item only — zero UI | `DevSettings` unavailable; panel cannot be opened |
-| `"floating"` | FloatingButton only | FloatingButton visible (host app controls via `showFloatingMonitor`) |
-| `"both"` **(default)** | DevSettings + FloatingButton | FloatingButton only (DevSettings stripped by RN at build time) |
+| `triggerMode`          | Dev builds                           | Production builds                                                    |
+| ---------------------- | ------------------------------------ | -------------------------------------------------------------------- |
+| `"dev-menu"`           | DevSettings menu item only — zero UI | `DevSettings` unavailable; panel cannot be opened                    |
+| `"floating"`           | FloatingButton only                  | FloatingButton visible (host app controls via `showFloatingMonitor`) |
+| `"both"` **(default)** | DevSettings + FloatingButton         | FloatingButton only (DevSettings stripped by RN at build time)       |
 
 > **Shake in production:** `DevSettings` is stripped from production binaries by React Native at the native level — there is no way to enable it in release builds from JavaScript. The FloatingButton is the production-capable trigger. Hosts can hide it in production with `showFloatingMonitor={__DEV__}`.
 
@@ -371,6 +399,7 @@
 **Objective:** The root UI coordinator — owns `isVisible` state, registers the DevSettings menu item, and conditionally renders Modal A (FAB) and Modal B (Panel) based on `triggerMode`.
 
 **Scope:**
+
 - Create `src/components/network-monitor-shell/index.tsx`
 - Props: `triggerMode: 'dev-menu' | 'floating' | 'both'` (default `'both'`), `showFloatingMonitor: boolean`
 - Owns `isVisible: boolean` state (controls Modal B)
@@ -381,6 +410,7 @@
 - Effect: when `showFloatingMonitor` flips to `false`, close any open panel — `if (!showFloatingMonitor && isVisible) setIsVisible(false)`
 
 **Acceptance Criteria:**
+
 - `triggerMode="dev-menu"`: Modal A is never mounted; DevSettings item registered once in `__DEV__`
 - `triggerMode="floating"`: Modal A mounted when `showFloatingMonitor` is true; no DevSettings call made
 - `triggerMode="both"`: Modal A mounted and DevSettings registered — both triggers work independently
@@ -398,6 +428,7 @@
 **Objective:** The draggable floating action button using `PanResponder` and `Animated.ValueXY`. Only rendered when `triggerMode` is `'floating'` or `'both'` — it is the production-capable trigger.
 
 **Scope:**
+
 - Create `src/components/floating-button/index.tsx`
 - Props: `onPress: () => void`
 - `Animated.ValueXY` initialized to default position (bottom-right corner with `FLOATING_BUTTON_DEFAULT_RIGHT_OFFSET` and `FLOATING_BUTTON_DEFAULT_Y_FRACTION` from layout config)
@@ -409,6 +440,7 @@
 - Position stored in `useRef` — survives parent re-renders without resetting to default
 
 **Acceptance Criteria:**
+
 - Dragging beyond `TAP_DISTANCE_THRESHOLD` pixels does not trigger `onPress`
 - Tapping (drag distance below threshold) always triggers `onPress`
 - After drag release, button always snaps to left or right edge — never floats in the middle
@@ -425,6 +457,7 @@
 **Objective:** The full-screen container shown in Modal B — hosts the Navigator, handles the entry animation.
 
 **Scope:**
+
 - Create `src/components/network-panel/index.tsx`
 - Props: `onClose: () => void`
 - Full-screen dark background wrapped in `SafeAreaView` from `react-native`
@@ -433,6 +466,7 @@
 - `onClose` passed to `StackHeader` as the `×` button action and to Android back via Shell's `onRequestClose`
 
 **Acceptance Criteria:**
+
 - Entry animation plays on every open — no stale animation state (component unmounts between sessions)
 - `SafeAreaView` prevents content from going under notch on iOS or status bar on Android
 - `RootTabBar` is always visible at the bottom — content above scrolls independently
@@ -447,6 +481,7 @@
 **Objective:** Wire `NetworkMonitorShell` into `NetworkMonitorProvider`, expose `triggerMode` as a provider prop, and remove the `_showFloatingMonitor` placeholder added in Task 0.1.
 
 **Scope:**
+
 - Add `triggerMode?: 'dev-menu' | 'floating' | 'both'` to `NetworkMonitorProviderProps` in `src/context/types.ts` (default `'both'`)
 - Update `src/context/NetworkMonitorContext.tsx`:
   - Restore `showFloatingMonitor` (remove the `_` prefix)
@@ -456,6 +491,7 @@
 - Verify `NetworkMonitorProvider` existing props (`showFloatingMonitor`, `maxRequests`, `redactHeaders`, etc.) are unchanged
 
 **Acceptance Criteria:**
+
 - `yarn build` completes with zero TypeScript errors
 - `triggerMode` defaults to `'both'` — existing host apps with no prop change get DevSettings + FloatingButton without any code change
 - `showFloatingMonitor={false}` with any `triggerMode` renders zero visible UI
@@ -477,6 +513,7 @@
 **Objective:** The memoized row component for the request list.
 
 **Scope:**
+
 - Create `src/features/network-requests/components/RequestListItem.tsx`
 - Props: `request: NetworkRequest`, `onPress: () => void`
 - Wrapped in `React.memo` with custom comparator: re-render only when `id` or `responseCode` changes
@@ -489,6 +526,7 @@
 - Error state (`responseCode >= 400`): row left border accent in `colors.error`
 
 **Acceptance Criteria:**
+
 - Component re-renders ONLY when `responseCode` or `id` changes
 - Fixed height enables `getItemLayout` on parent `FlatList`
 - Pending requests update to show status code when response arrives
@@ -503,6 +541,7 @@
 **Objective:** The root screen of the Requests tab — FlatList of all captured requests with search/filter.
 
 **Scope:**
+
 - Create `src/features/network-requests/screens/RequestListScreen.tsx`
 - Reads `requests` from `NetworkMonitorContext`
 - Local state: `searchQuery: string`
@@ -514,6 +553,7 @@
 - Empty state (search no results): `No results for "${searchQuery}"`
 
 **Acceptance Criteria:**
+
 - List scrolls smoothly with 500+ items — no dropped frames
 - `getItemLayout` is provided — list does not measure items individually
 - New requests prepend to the top — list does not scroll to top automatically on update
@@ -528,12 +568,14 @@
 **Objective:** Shows the summary fields of a single network request.
 
 **Scope:**
+
 - Create `src/features/network-requests/screens/detail-tabs/OverviewTab.tsx`
 - Props: `request: NetworkRequest`
 - Displays in a `ScrollView`: Full URL (selectable), Method (Badge), Status code, Duration, Request timestamp
 - Custom error section visible only if `request.customError` is set
 
 **Acceptance Criteria:**
+
 - Custom error section renders only when `request.customError` is non-null
 - Full URL is selectable (user can copy it)
 - All fields render correctly for pending requests (null `responseCode`, null `duration`)
@@ -548,11 +590,13 @@
 **Objective:** Shows outgoing request headers and body.
 
 **Scope:**
+
 - Create `src/features/network-requests/screens/detail-tabs/RequestTab.tsx`
 - Props: `request: NetworkRequest`
 - Two labeled sections in a `ScrollView`: "Headers" (`KeyValueTable`) + "Body" (`JsonViewer`)
 
 **Acceptance Criteria:**
+
 - Empty headers: `KeyValueTable` shows "No headers"
 - Empty body: `JsonViewer` shows "No request body"
 - Redacted headers render without crashing
@@ -567,11 +611,13 @@
 **Objective:** Shows incoming response headers, body, and any error details.
 
 **Scope:**
+
 - Create `src/features/network-requests/screens/detail-tabs/ResponseTab.tsx`
 - Props: `request: NetworkRequest`
 - Three labeled sections in a `ScrollView`: "Headers", "Body", "Error Details" (conditional)
 
 **Acceptance Criteria:**
+
 - Same empty state behavior as Task 4.4
 - Error Details section conditionally visible
 - Renders correctly for pending responses
@@ -585,6 +631,7 @@
 **Objective:** Shows timing breakdown for the request lifecycle.
 
 **Scope:**
+
 - Create `src/features/network-requests/screens/detail-tabs/TimingTab.tsx`
 - Props: `request: NetworkRequest`
 - Displays: Started At, Completed At, Total Duration
@@ -593,6 +640,7 @@
 - No animation on the bar — static width derived from data
 
 **Acceptance Criteria:**
+
 - Bar width never exceeds container width (clamped to 100%)
 - Pending requests show all timing fields as `—` placeholder
 - Bar color threshold logic is covered by unit tests
@@ -606,6 +654,7 @@
 **Objective:** The pushed screen that composes the four detail tabs with a tab strip navigator.
 
 **Scope:**
+
 - Create `src/features/network-requests/screens/RequestDetailScreen.tsx`
 - Receives `screen: Extract<Screen, { name: 'request-detail' }>` — extracts `requestId`
 - Reads request from `NetworkMonitorContext` by ID
@@ -614,6 +663,7 @@
 - If request not found: render `EmptyState` with "Request no longer available"
 
 **Acceptance Criteria:**
+
 - Switching tabs is instant — no animation between tabs
 - Each tab's scroll position resets when tab is changed (conditional rendering handles this)
 - "Not found" state renders gracefully — no crash
@@ -634,12 +684,14 @@
 **Objective:** Register meaningful placeholder screens for WebSocket, Sessions, and Insights tabs.
 
 **Scope:**
+
 - Create `src/features/websocket/screens/WebSocketListScreen.tsx` — `EmptyState` "WebSocket Inspector / Coming in a future release"
 - Create `src/features/sessions/screens/SessionListScreen.tsx` — `EmptyState` "Session Recording / Coming in a future release"
 - Create `src/features/insights/screens/InsightsOverviewScreen.tsx` — `EmptyState` "Insights / Coming in a future release"
 - Register all placeholder screens in `ScreenRenderer`
 
 **Acceptance Criteria:**
+
 - All four tabs are tappable and render without crashing
 - Placeholder screens are clearly marked "coming soon" — not blank white screens
 - Placeholder screens are the exact files that will be replaced in-place when those features are built
@@ -653,6 +705,7 @@
 **Objective:** Validate the full revamped UI in the bare React Native example app across both trigger modes.
 
 **Scope:**
+
 - Remove `GestureHandlerRootView`, reanimated plugin, and safe area provider setup from `example/`
 - Manual validation checklist — **FloatingButton trigger** (`triggerMode="floating"` or `"both"`):
   - Floating button appears at startup
@@ -675,6 +728,7 @@
 - Validate `showFloatingMonitor={false}` renders nothing regardless of `triggerMode`
 
 **Acceptance Criteria:**
+
 - All checklist items pass on both iOS and Android
 - No RN warnings in Metro output related to this library
 - No crashes in any user flow
@@ -689,6 +743,7 @@
 **Objective:** Validate the full revamped UI in the Expo example app.
 
 **Scope:**
+
 - Remove library-specific setup for the three removed dependencies from `example-expo/`
 - Run the same manual validation checklist as Task 5.2
 - Additional Expo-specific checks:
@@ -697,6 +752,7 @@
   - No Expo SDK version constraints introduced
 
 **Acceptance Criteria:**
+
 - All Task 5.2 checklist items pass on Expo build
 - `npx expo prebuild` completes without errors
 - No native module warnings related to removed dependencies
@@ -710,6 +766,7 @@
 **Objective:** Finalize the package manifest and update user-facing documentation to reflect removed peer dependencies.
 
 **Scope:**
+
 - Confirm `peerDependencies` contains only `react` and `react-native`
 - Update `README.md`: remove installation steps and setup sections for the three removed libraries
 - Update `ARCHITECTURE.md`: update the component breakdown section to reflect Navigator + feature module structure
@@ -717,6 +774,7 @@
 - `CHANGELOG.md` entry documents removed dependencies
 
 **Acceptance Criteria:**
+
 - `README.md` installation section references only `react` and `react-native` as peer deps
 - No mention of removed libraries in any docs
 - Version bump follows semver
@@ -756,6 +814,7 @@
 ```
 
 **Parallelism opportunities:**
+
 - All of Phase 2 (2.1–2.7) can be built in parallel once Phase 0 is done
 - Phase 1 and Phase 2 can run in parallel
 - Tasks 4.3–4.6 (detail tabs) are independent of each other and can run in parallel

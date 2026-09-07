@@ -111,14 +111,23 @@ interface NavigatorProps {
   onClose: () => void;
   /** Slot for StackHeader — passed through so header stays outside the slide animation. */
   headerSlot?: React.ReactNode;
+  /**
+   * When false, Navigator skips wrapping with NavigatorProvider.
+   * Use this when a parent already provides the context (e.g. NetworkPanel).
+   * Defaults to true so Navigator is self-contained when used standalone.
+   */
+  withProvider?: boolean;
 }
 
 const Navigator = React.forwardRef<NavigatorHandle, NavigatorProps>(
-  ({ onClose, headerSlot = null }, ref) => {
-    return (
-      <NavigatorProvider>
-        <InnerNavigator ref={ref} onClose={onClose} headerSlot={headerSlot} />
-      </NavigatorProvider>
+  ({ onClose, headerSlot = null, withProvider = true }, ref) => {
+    const inner = (
+      <InnerNavigator ref={ref} onClose={onClose} headerSlot={headerSlot} />
+    );
+    return withProvider ? (
+      <NavigatorProvider>{inner}</NavigatorProvider>
+    ) : (
+      inner
     );
   }
 );
