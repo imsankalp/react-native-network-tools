@@ -532,7 +532,7 @@
 - Pending requests update to show status code when response arrives
 - Tapping anywhere on the row triggers `onPress` once
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -559,7 +559,7 @@
 - New requests prepend to the top — list does not scroll to top automatically on update
 - Clearing search immediately restores full list
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -581,7 +581,7 @@
 - All fields render correctly for pending requests (null `responseCode`, null `duration`)
 - No overflow or layout break on very long URLs
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -602,7 +602,7 @@
 - Redacted headers render without crashing
 - Sections are clearly visually separated
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -622,7 +622,7 @@
 - Error Details section conditionally visible
 - Renders correctly for pending responses
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -645,7 +645,7 @@
 - Pending requests show all timing fields as `—` placeholder
 - Bar color threshold logic is covered by unit tests
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -669,7 +669,7 @@
 - "Not found" state renders gracefully — no crash
 - `StackHeader` title shows the endpoint path, not full URL
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -696,7 +696,7 @@
 - Placeholder screens are clearly marked "coming soon" — not blank white screens
 - Placeholder screens are the exact files that will be replaced in-place when those features are built
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -734,7 +734,7 @@
 - No crashes in any user flow
 - DevSettings item does not appear in a production/release build
 
-**Status:** [ ] Pending
+**Status:** [ ] Pending — manual device validation required
 
 ---
 
@@ -757,7 +757,7 @@
 - `npx expo prebuild` completes without errors
 - No native module warnings related to removed dependencies
 
-**Status:** [ ] Pending
+**Status:** [ ] Pending — manual device validation required
 
 ---
 
@@ -780,7 +780,7 @@
 - Version bump follows semver
 - `CHANGELOG.md` entry exists and is accurate
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 

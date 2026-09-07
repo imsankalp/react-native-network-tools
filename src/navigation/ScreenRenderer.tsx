@@ -3,6 +3,9 @@ import type { Screen } from './types';
 import { PlaceholderScreen } from './PlaceholderScreen';
 import RequestListScreen from '../features/network-requests/screens/RequestListScreen';
 import RequestDetailScreen from '../features/network-requests/screens/RequestDetailScreen';
+import WebSocketListScreen from '../features/websocket/screens/WebSocketListScreen';
+import SessionListScreen from '../features/sessions/screens/SessionListScreen';
+import InsightsOverviewScreen from '../features/insights/screens/InsightsOverviewScreen';
 
 // ─── Screen component type ────────────────────────────────────────────────────
 
@@ -24,16 +27,16 @@ const SCREEN_REGISTRY: {
   >,
   'request-detail': RequestDetailScreen,
 
-  // ── WebSocket (placeholder — implemented in a future release) ─────────────
-  'websocket-list': PlaceholderScreen as ScreenComponent<
+  // ── WebSocket ─────────────────────────────────────────────────────────────
+  'websocket-list': WebSocketListScreen as ScreenComponent<
     Extract<Screen, { name: 'websocket-list' }>
   >,
   'websocket-detail': PlaceholderScreen as ScreenComponent<
     Extract<Screen, { name: 'websocket-detail' }>
   >,
 
-  // ── Sessions (placeholder — implemented in a future release) ──────────────
-  'session-list': PlaceholderScreen as ScreenComponent<
+  // ── Sessions ──────────────────────────────────────────────────────────────
+  'session-list': SessionListScreen as ScreenComponent<
     Extract<Screen, { name: 'session-list' }>
   >,
   'session-detail': PlaceholderScreen as ScreenComponent<
@@ -43,8 +46,8 @@ const SCREEN_REGISTRY: {
     Extract<Screen, { name: 'session-recording' }>
   >,
 
-  // ── Insights (placeholder — implemented in a future release) ──────────────
-  'insights-overview': PlaceholderScreen as ScreenComponent<
+  // ── Insights ──────────────────────────────────────────────────────────────
+  'insights-overview': InsightsOverviewScreen as ScreenComponent<
     Extract<Screen, { name: 'insights-overview' }>
   >,
   'insights-performance': PlaceholderScreen as ScreenComponent<
@@ -53,8 +56,6 @@ const SCREEN_REGISTRY: {
 };
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
-// Accepts no props — reads the active screen exclusively from NavigatorContext
-// via the `screen` prop passed in by Navigator.tsx.
 
 interface ScreenRendererProps {
   screen: Screen;
