@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { DevSettings, Modal, View } from 'react-native';
+import { DevSettings, Modal, StyleSheet, View } from 'react-native';
 import { FloatingButton } from '../floating-button';
 import { NetworkPanel } from '../network-panel';
 
@@ -51,7 +51,7 @@ export const NetworkMonitorShell: React.FC<NetworkMonitorShellProps> = ({
           animationType="none"
           statusBarTranslucent
         >
-          <View style={{ flex: 1 }} pointerEvents="box-none">
+          <View style={styles.fabLayer} pointerEvents="box-none">
             <FloatingButton onPress={openPanel} />
           </View>
         </Modal>
@@ -72,3 +72,7 @@ export const NetworkMonitorShell: React.FC<NetworkMonitorShellProps> = ({
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  fabLayer: { flex: 1 },
+});
