@@ -22,6 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSInteger maxBodyCaptureBytes;
 
 /**
+ * Case-insensitive set of header names whose values will be replaced with
+ * "[redacted]" before the request is stored and emitted. Updated at runtime
+ * via the setRedactHeaders TurboModule method.
+ */
+@property (nonatomic, copy) NSSet<NSString *> *redactHeaderNames;
+
+/**
  * Registers the URLProtocol interceptor. No-op in release builds — the entire
  * method body is compiled out with #if DEBUG.
  */
