@@ -6,14 +6,14 @@ Inspect all network requests in your React Native app via a floating overlay. Ze
 
 ## Platform Support
 
-| Platform | Status |
-|---|---|
-| React Native Android (New Architecture) | ✅ |
-| React Native Android (Old Architecture) | ✅ |
-| React Native iOS (New Architecture) | ✅ |
-| React Native iOS (Old Architecture) | ✅ |
-| Expo Development Build | ✅ |
-| Expo Go | ❌ Requires a dev build |
+| Platform                                | Status                  |
+| --------------------------------------- | ----------------------- |
+| React Native Android (New Architecture) | ✅                      |
+| React Native Android (Old Architecture) | ✅                      |
+| React Native iOS (New Architecture)     | ✅                      |
+| React Native iOS (Old Architecture)     | ✅                      |
+| Expo Development Build                  | ✅                      |
+| Expo Go                                 | ❌ Requires a dev build |
 
 ---
 
@@ -25,11 +25,7 @@ npm install react-native-network-tools
 yarn add react-native-network-tools
 ```
 
-**Required peer dependencies:**
-
-```sh
-yarn add react-native-gesture-handler react-native-reanimated react-native-safe-area-context
-```
+No additional peer dependencies required — the library is built entirely on React Native built-ins.
 
 ---
 
@@ -144,32 +140,36 @@ Add the plugin to `app.json` and run `expo prebuild`. The plugin patches both `M
 
 ### 1. Wrap your app
 
-Wrap your root component with `NetworkMonitorProvider`. The floating monitor button is shown by default.
+Wrap your root component with `NetworkMonitorProvider`. No wrapper components from other libraries are needed.
 
 ```tsx
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NetworkMonitorProvider } from 'react-native-network-tools';
 
 export default function App() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <NetworkMonitorProvider maxRequests={1000} showFloatingMonitor={true}>
-          {/* your app */}
-        </NetworkMonitorProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
-  );
+  return <NetworkMonitorProvider>{/* your app */}</NetworkMonitorProvider>;
 }
 ```
 
 `NetworkMonitorProvider` props:
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `maxRequests` | `number` | `1000` | Max requests kept in memory (FIFO eviction) |
-| `showFloatingMonitor` | `boolean` | `true` | Whether to render the draggable overlay button |
+| Prop                      | Type                                 | Default  | Description                                     |
+| ------------------------- | ------------------------------------ | -------- | ----------------------------------------------- |
+| `maxRequests`             | `number`                             | `1000`   | Max requests kept in memory (FIFO eviction)     |
+| `showFloatingMonitor`     | `boolean`                            | `true`   | Whether to render the draggable floating button |
+| `triggerMode`             | `'dev-menu' \| 'floating' \| 'both'` | `'both'` | How the inspector is opened (see below)         |
+| `redactHeaders`           | `string[]`                           | —        | Replace the default redact list entirely        |
+| `additionalRedactHeaders` | `string[]`                           | —        | Append to the default redact list               |
+| `revealRedactedHeaders`   | `boolean`                            | `true`   | Show `[redacted]` values in the UI              |
+
+**`triggerMode` options:**
+
+| Value                | Dev builds                         | Production builds       |
+| -------------------- | ---------------------------------- | ----------------------- |
+| `"dev-menu"`         | Dev menu item only (shake / Cmd+D) | Panel cannot be opened  |
+| `"floating"`         | Floating button only               | Floating button visible |
+| `"both"` _(default)_ | Dev menu + floating button         | Floating button only    |
+
+> In production, `DevSettings` is stripped by React Native at the native level. Use `showFloatingMonitor={__DEV__}` to hide the button in release builds.
 
 ### 2. Access requests in code (optional)
 
@@ -201,7 +201,7 @@ annotateNetworkRequestError({
   url: 'https://api.example.com/login',
   method: 'POST',
   message: 'Validation failed: email is required',
-  type: 'validation',   // 'http' | 'validation' | 'custom'
+  type: 'validation', // 'http' | 'validation' | 'custom'
   code: 'EMAIL_REQUIRED',
 });
 ```
@@ -218,24 +218,16 @@ React context provider. Renders the floating monitor and manages request state.
 
 Returns `{ requests, clearRequests, getRequestById, addRequest, annotateRequestError }`.
 
-### `FloatingNetworkMonitor`
-
-The draggable overlay component. Rendered automatically by `NetworkMonitorProvider` when `showFloatingMonitor={true}`. Import and render it yourself if you need manual placement:
-
-```tsx
-import { FloatingNetworkMonitor } from 'react-native-network-tools';
-```
-
 ### Low-level native API
 
 ```ts
 import {
-  getAllNetworkRequests,   // returns JSON string of all requests
-  getNetworkRequestById,  // returns JSON string of one request
-  clearNetworkRequests,   // clears native storage
+  getAllNetworkRequests, // returns JSON string of all requests
+  getNetworkRequestById, // returns JSON string of one request
+  clearNetworkRequests, // clears native storage
   getNetworkRequestCount, // returns number
-  isNativeNetworkToolsAvailable,  // boolean
-  getNetworkToolsRuntime,         // 'turbo' | 'legacy' | 'unavailable'
+  isNativeNetworkToolsAvailable, // boolean
+  getNetworkToolsRuntime, // 'turbo' | 'legacy' | 'unavailable'
 } from 'react-native-network-tools';
 ```
 

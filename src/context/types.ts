@@ -58,10 +58,14 @@ export const DEFAULT_REDACT_HEADERS = [
   'Proxy-Authorization',
 ];
 
+export type TriggerMode = 'dev-menu' | 'floating' | 'both';
+
 export interface NetworkMonitorProviderProps {
   children: ReactNode;
   maxRequests?: number;
   showFloatingMonitor?: boolean;
+  /** Controls which mechanism(s) open the network inspector. Default: 'both'. */
+  triggerMode?: TriggerMode;
   maxBodyCaptureBytes?: number;
   /** Replaces the default redact list entirely. */
   redactHeaders?: string[];

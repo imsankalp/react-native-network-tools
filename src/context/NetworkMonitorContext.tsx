@@ -17,6 +17,7 @@ import type {
   NetworkRequest,
 } from './types';
 import { DEFAULT_REDACT_HEADERS } from './types';
+import { NetworkMonitorShell } from '../components/network-monitor-shell';
 
 const NetworkMonitorContext = createContext<
   NetworkMonitorContextType | undefined
@@ -27,7 +28,8 @@ const NETWORK_EVENT_NAME = 'NetworkTools:onRequest';
 export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   children,
   maxRequests = 1000,
-  showFloatingMonitor: _showFloatingMonitor = true,
+  showFloatingMonitor = true,
+  triggerMode = 'both',
   maxBodyCaptureBytes,
   redactHeaders,
   additionalRedactHeaders,
@@ -147,7 +149,10 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   return (
     <NetworkMonitorContext.Provider value={contextValue}>
       {children}
-      {/* NetworkMonitorShell (floating button + panel) is wired here in Task 3.4 */}
+      <NetworkMonitorShell
+        triggerMode={triggerMode}
+        showFloatingMonitor={showFloatingMonitor}
+      />
     </NetworkMonitorContext.Provider>
   );
 };
