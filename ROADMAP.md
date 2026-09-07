@@ -419,7 +419,7 @@
 - `showFloatingMonitor={false}` with any triggerMode renders zero visible UI
 - In production builds, `DevSettings` guard (`!__DEV__`) prevents any call to the stripped module
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -448,7 +448,7 @@
 - `onPanResponderTerminate` prevents stuck-dragging after system interrupt (incoming call, notification)
 - Works identically in both dev and production builds — no `__DEV__` branches inside this component
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -472,7 +472,7 @@
 - `RootTabBar` is always visible at the bottom — content above scrolls independently
 - Panel fills the entire screen with no gaps or overflow on any device size
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
@@ -498,7 +498,7 @@
 - `triggerMode="dev-menu"` produces no visible UI on screen — only the DevSettings menu item
 - Host app TypeScript consumers can import and type `triggerMode` without casting
 
-**Status:** [ ] Pending
+**Status:** [x] Complete
 
 ---
 
