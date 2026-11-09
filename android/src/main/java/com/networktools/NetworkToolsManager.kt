@@ -19,6 +19,14 @@ object NetworkToolsManager {
   var redactHeaders: Set<String> = emptySet()
 
   /**
+   * True in debug builds of the library; always false in release builds.
+   * The host's OkHttp builder only adds the interceptor when a request is sent,
+   * so whether it was registered can't be known earlier.
+   */
+  val isCaptureActive: Boolean
+    get() = BuildConfig.NETWORK_TOOLS_ENABLED
+
+  /**
    * Add the NetworkTools interceptor to an OkHttpClient.Builder
    * This method should be called when configuring your OkHttpClient
    *

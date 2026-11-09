@@ -1,10 +1,11 @@
 #import "NetworkToolsStorage.h"
 
-static const NSInteger kNTMaxRequests = 100;
+static const NSInteger kNTDefaultMaxRequests = 1000;
 
 @implementation NetworkToolsStorage {
   NSMutableArray<NSDictionary *> *_requests;
   NSLock *_lock;
+  NSInteger _maxRequests;
 }
 
 + (instancetype)shared {
@@ -20,17 +21,37 @@ static const NSInteger kNTMaxRequests = 100;
   if (self = [super init]) {
     _requests = [NSMutableArray array];
     _lock = [[NSLock alloc] init];
+    _maxRequests = kNTDefaultMaxRequests;
   }
   return self;
+}
+
+- (NSInteger)maxRequests {
+  [_lock lock];
+  NSInteger value = _maxRequests;
+  [_lock unlock];
+  return value;
+}
+
+- (void)setMaxRequests:(NSInteger)maxRequests {
+  [_lock lock];
+  _maxRequests = MAX(maxRequests, 1);
+  [self trimLocked];
+  [_lock unlock];
 }
 
 - (void)addRequest:(NSDictionary *)request {
   [_lock lock];
   [_requests addObject:request];
-  while ((NSInteger)_requests.count > kNTMaxRequests) {
-    [_requests removeObjectAtIndex:0];
-  }
+  [self trimLocked];
   [_lock unlock];
+}
+
+- (void)trimLocked {
+  NSInteger overflow = (NSInteger)_requests.count - _maxRequests;
+  if (overflow > 0) {
+    [_requests removeObjectsInRange:NSMakeRange(0, (NSUInteger)overflow)];
+  }
 }
 
 - (NSArray<NSDictionary *> *)allRequests {

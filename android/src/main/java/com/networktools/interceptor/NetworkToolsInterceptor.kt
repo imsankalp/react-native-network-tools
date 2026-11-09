@@ -2,6 +2,7 @@ package com.networktools.interceptor
 
 import com.networktools.NetworkToolsManager
 import com.networktools.models.NetworkRequest
+import com.networktools.session.SessionRecorder
 import com.networktools.storage.NetworkRequestStorage
 import okhttp3.Headers
 import okhttp3.Interceptor
@@ -107,6 +108,7 @@ class NetworkToolsInterceptor : Interceptor {
   private fun record(networkRequest: NetworkRequest) {
     NetworkRequestStorage.addRequest(networkRequest)
     NetworkToolsEventEmitter.emitNetworkRequest(networkRequest)
+    SessionRecorder.record(networkRequest)
   }
 
   private fun captureHeaders(source: Headers): CapturedHeaders {

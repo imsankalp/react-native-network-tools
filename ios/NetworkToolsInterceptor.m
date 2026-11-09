@@ -1,6 +1,7 @@
 #import "NetworkToolsInterceptor.h"
 #import "NetworkToolsStorage.h"
 #import "NetworkToolsManager.h"
+#import "NetworkToolsSessionRecorder.h"
 #import <objc/runtime.h>
 
 static NSString *const kNTHandledKey = @"NetworkToolsHandled";
@@ -202,6 +203,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 
   [[NetworkToolsStorage shared] addRequest:entry];
   [[NetworkToolsManager shared] emitRequest:entry];
+  [[NetworkToolsSessionRecorder shared] recordRequest:entry];
 }
 
 #pragma mark - Helpers

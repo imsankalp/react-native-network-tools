@@ -5,8 +5,16 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 
 object NetworkRequestStorage {
+  private const val DEFAULT_MAX_REQUESTS = 1000
+
   private val requests = ConcurrentLinkedQueue<NetworkRequest>()
-  private const val MAX_REQUESTS = 100
+
+  @Volatile
+  var maxRequests: Int = DEFAULT_MAX_REQUESTS
+    set(value) {
+      field = value.coerceAtLeast(1)
+      trim()
+    }
 
   /**
    * Add a network request to storage
@@ -14,11 +22,7 @@ object NetworkRequestStorage {
    */
   fun addRequest(request: NetworkRequest) {
     requests.add(request)
-    
-    // Remove oldest requests if we exceed the limit
-    while (requests.size > MAX_REQUESTS) {
-      requests.poll()
-    }
+    trim()
   }
 
   /**
@@ -47,5 +51,11 @@ object NetworkRequestStorage {
    */
   fun getCount(): Int {
     return requests.size
+  }
+
+  private fun trim() {
+    while (requests.size > maxRequests) {
+      requests.poll()
+    }
   }
 }

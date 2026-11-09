@@ -10,6 +10,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (class, nonatomic, readonly) NetworkToolsStorage *shared;
 
+/** Most recent requests kept in memory. Default: 1000. Lowering it trims immediately. */
+@property (nonatomic, assign) NSInteger maxRequests;
+
 - (void)addRequest:(NSDictionary *)request;
 - (NSArray<NSDictionary *> *)allRequests;
 - (nullable NSDictionary *)requestById:(NSString *)requestId;
