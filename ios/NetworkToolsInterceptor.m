@@ -92,10 +92,12 @@ static NSArray *nt_injectedProtocolClasses(NSURLSessionConfiguration *self, SEL 
   NSMutableURLRequest *forwarded = [self.request mutableCopy];
 
   // Replace the (now-exhausted) stream with the buffered NSData so the
-  // forwarded request actually sends the correct body.
+  // forwarded request actually sends the correct body. Order matters:
+  // HTTPBody and HTTPBodyStream are exclusive, so setting the stream (even
+  // to nil) after the body would clear the body.
   if (streamData.length > 0) {
-    forwarded.HTTPBody = streamData;
     forwarded.HTTPBodyStream = nil;
+    forwarded.HTTPBody = streamData;
   }
 
   // Mark the forwarded request so canInitWithRequest: skips it.
@@ -207,16 +209,14 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   return [result copy];
 }
 
+// Reads the whole stream: the buffered data is also what gets forwarded.
 - (NSData *)drainStream:(NSInputStream *)stream {
   NSMutableData *buffer = [NSMutableData data];
   [stream open];
   uint8_t chunk[4096];
   NSInteger bytesRead;
-  NSInteger totalRead = 0;
-  while (totalRead < ntMaxBodyBytes() &&
-         (bytesRead = [stream read:chunk maxLength:sizeof(chunk)]) > 0) {
+  while ((bytesRead = [stream read:chunk maxLength:sizeof(chunk)]) > 0) {
     [buffer appendBytes:chunk length:(NSUInteger)bytesRead];
-    totalRead += bytesRead;
   }
   [stream close];
   return buffer;
