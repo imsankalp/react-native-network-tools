@@ -23,14 +23,19 @@ export const INITIAL_STATE: NavigatorState = {
   },
 };
 
-// Factory used in tests so each test gets an independent state object.
-export function createInitialState(): NavigatorState {
+// Fresh state per panel open. With `resumeRecording`, the sessions tab opens on
+// the recording screen (back still leads to the session list).
+export function createInitialState(
+  options: { resumeRecording?: boolean } = {}
+): NavigatorState {
   return {
     activeTab: 'requests',
     stacks: {
       requests: [ROOT_SCREENS.requests],
       websocket: [ROOT_SCREENS.websocket],
-      sessions: [ROOT_SCREENS.sessions],
+      sessions: options.resumeRecording
+        ? [ROOT_SCREENS.sessions, { name: 'session-recording' }]
+        : [ROOT_SCREENS.sessions],
       insights: [ROOT_SCREENS.insights],
     },
   };
@@ -57,6 +62,17 @@ export function navigatorReducer(
         stacks: {
           ...state.stacks,
           [state.activeTab]: [...currentStack, action.screen],
+        },
+      };
+    }
+
+    case 'REPLACE': {
+      const [root, ...rest] = state.stacks[state.activeTab];
+      return {
+        ...state,
+        stacks: {
+          ...state.stacks,
+          [state.activeTab]: [root, ...rest.slice(0, -1), action.screen],
         },
       };
     }

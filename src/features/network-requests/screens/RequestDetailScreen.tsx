@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { colors } from '../../../config/color';
 import { typography } from '../../../config/typography';
+import { spacing } from '../../../config/spacing';
 import { TAB_STRIP_HEIGHT } from '../../../config/layout';
 import { useNetworkMonitor } from '../../../context/NetworkMonitorContext';
 import { EmptyState } from '../../../components/EmptyState';
@@ -10,6 +17,8 @@ import { RequestTab } from './detail-tabs/RequestTab';
 import { ResponseTab } from './detail-tabs/ResponseTab';
 import { TimingTab } from './detail-tabs/TimingTab';
 import type { ScreenParams } from '../../../navigation/types';
+import type { NetworkRequest } from '../../../context/types';
+import { sessionStore } from '../../../store/SessionStore';
 
 interface Props {
   screen: ScreenParams<'request-detail'>;
@@ -24,10 +33,47 @@ const TABS: { key: DetailTab; label: string }[] = [
   { key: 'timing', label: 'Timing' },
 ];
 
-const RequestDetailScreen: React.FC<Props> = ({ screen }) => {
+// Saved-session requests load from disk; others come from the live store.
+function useDetailRequest(
+  requestId: string,
+  sessionId: string | undefined
+): { request: NetworkRequest | null; loading: boolean } {
   const { getRequestById } = useNetworkMonitor();
-  const request = getRequestById(screen.requestId);
+  const [sessionRequest, setSessionRequest] = useState<NetworkRequest | null>(
+    null
+  );
+  const [loading, setLoading] = useState(sessionId !== undefined);
+
+  useEffect(() => {
+    if (sessionId === undefined) return;
+    let cancelled = false;
+    setLoading(true);
+    sessionStore.getSessionRequest(sessionId, requestId).then((result) => {
+      if (cancelled) return;
+      setSessionRequest(result);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, requestId]);
+
+  if (sessionId === undefined) {
+    return { request: getRequestById(requestId), loading: false };
+  }
+  return { request: sessionRequest, loading };
+}
+
+const RequestDetailScreen: React.FC<Props> = ({ screen }) => {
+  const { request, loading } = useDetailRequest(
+    screen.requestId,
+    screen.sessionId
+  );
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
+
+  if (loading) {
+    return <ActivityIndicator style={styles.loading} color={colors.primary} />;
+  }
 
   if (!request) {
     return (
@@ -105,6 +151,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  loading: {
+    marginTop: spacing.lg,
   },
 });
 

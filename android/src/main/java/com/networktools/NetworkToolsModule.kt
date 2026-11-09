@@ -1,17 +1,16 @@
 package com.networktools
 
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.module.annotations.ReactModule
-import com.networktools.interceptor.NetworkToolsEventEmitter
 
 @ReactModule(name = NetworkToolsModule.NAME)
 class NetworkToolsModule(reactContext: ReactApplicationContext) :
   NativeNetworkToolsSpec(reactContext) {
 
   init {
-    // Initialize the event emitter with the React context
-    NetworkToolsEventEmitter.initialize(reactContext)
+    NetworkToolsModuleDelegate.initialize(reactContext)
   }
 
   // IMPORTANT: Add this method to support event emission
@@ -51,6 +50,32 @@ class NetworkToolsModule(reactContext: ReactApplicationContext) :
     }
     NetworkToolsManager.redactHeaders = set
   }
+
+  override fun setMaxRequests(max: Double) = NetworkToolsModuleDelegate.setMaxRequests(max)
+
+  override fun isCaptureActive(): Boolean = NetworkToolsModuleDelegate.isCaptureActive()
+
+  override fun startSession(): String = NetworkToolsModuleDelegate.startSession()
+
+  override fun stopSession(promise: Promise) = NetworkToolsModuleDelegate.stopSession(promise)
+
+  override fun getActiveSession(): String = NetworkToolsModuleDelegate.getActiveSession()
+
+  override fun getActiveSessionSummaries(): String =
+    NetworkToolsModuleDelegate.getActiveSessionSummaries()
+
+  override fun listSessions(promise: Promise) = NetworkToolsModuleDelegate.listSessions(promise)
+
+  override fun getSessionSummaries(sessionId: String, promise: Promise) =
+    NetworkToolsModuleDelegate.getSessionSummaries(sessionId, promise)
+
+  override fun getSessionRequest(sessionId: String, requestId: String, promise: Promise) =
+    NetworkToolsModuleDelegate.getSessionRequest(sessionId, requestId, promise)
+
+  override fun deleteSession(sessionId: String, promise: Promise) =
+    NetworkToolsModuleDelegate.deleteSession(sessionId, promise)
+
+  override fun clearSessions(promise: Promise) = NetworkToolsModuleDelegate.clearSessions(promise)
 
   override fun addListener(eventType: String?) {
 

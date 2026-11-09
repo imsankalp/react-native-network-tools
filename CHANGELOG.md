@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### New Features
+
+- **Session recording (debug builds):** The Sessions tab can now record the requests of one flow. Start a recording, use the app, then stop to see the session's requests in order and open any of them. Recordings keep running while the monitor is closed and across JS reloads; a red dot on the floating button shows one is active. Saved sessions are stored on the device as NDJSON files in a private folder excluded from backups, and the 20 most recent are kept. See the README's "Record sessions" section and `docs/SESSION_FILE_FORMAT.md`.
+- **`useSessions()` hook** and session types (`ActiveSession`, `SessionIndexEntry`, `SessionRequest`, `SessionRequestSummary`, `UseSessionsResult`) are exported.
+- **Structured body metadata on every request:** `requestBodyTruncated` / `responseBodyTruncated`, `requestBodyEncoding` / `responseBodyEncoding` (`'utf8'` or `'omitted'`), `requestContentType` / `responseContentType`, and `redactedRequestHeaders` / `redactedResponseHeaders`.
+
+### Changed
+
+- **Truncated bodies no longer contain marker text.** Bodies cut at `maxBodyCaptureBytes` previously ended with `[... truncated — N bytes total]`; they now hold only the captured bytes, and the detail screen shows a "Truncated at the body capture limit" notice instead. Code that searched bodies for the marker should read `responseBodyTruncated` / `requestBodyTruncated`.
+- **Binary bodies are empty instead of a placeholder.** Bodies previously set to `[binary content — not captured]` are now `''` with encoding `'omitted'`; the detail screen says so.
+- **The native request buffer follows `maxRequests`** (default 1000) instead of a fixed 100, so more requests survive a JS reload.
+- **Truncated UTF-8 bodies decode cleanly:** a cut in the middle of a multi-byte character no longer drops the whole body.
+
+### Bug Fixes
+
+- **iOS: request bodies were dropped while the interceptor was active.** POST, PUT, PATCH and multipart requests reached the server with an empty body (`Content-Length: 0`), even though the monitor showed the body. The interceptor set the buffered body and then cleared the request's body stream, which on `NSMutableURLRequest` also clears the body. The order is now reversed, and the full body is forwarded even when it is larger than `maxBodyCaptureBytes` (only the recorded copy is truncated).
+
 ## [0.3.1] - 2026-09-08
 
 ### Bug Fixes

@@ -72,4 +72,28 @@ describe('NativeNetworkTools runtime resolution', () => {
     expect(mod.default.getRequestCount()).toBe(0);
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('returns safe session defaults when native module is unavailable', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const mod = loadNativeModule({
+      NativeModules: {},
+      TurboModuleRegistry: {
+        get: jest.fn(() => null),
+      },
+    });
+    const native = mod.default;
+
+    expect(() => native.setMaxRequests(10)).not.toThrow();
+    expect(native.isCaptureActive()).toBe(false);
+    expect(native.startSession()).toBe('');
+    expect(native.getActiveSession()).toBe('');
+    expect(native.getActiveSessionSummaries()).toBe('[]');
+    await expect(native.stopSession()).resolves.toBe('');
+    await expect(native.listSessions()).resolves.toBe('[]');
+    await expect(native.getSessionSummaries('s')).resolves.toBe('[]');
+    await expect(native.getSessionRequest('s', 'r')).resolves.toBe('');
+    await expect(native.deleteSession('s')).resolves.toBeUndefined();
+    await expect(native.clearSessions()).resolves.toBeUndefined();
+  });
 });

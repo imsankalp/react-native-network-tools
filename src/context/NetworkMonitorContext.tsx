@@ -10,6 +10,7 @@ import React, {
 import { NativeEventEmitter, Platform, StyleSheet, View } from 'react-native';
 import NetworkTools from '../NativeNetworkTools';
 import { networkStore } from '../store/NetworkStore';
+import { sessionStore } from '../store/SessionStore';
 import type {
   AnnotateNetworkRequestErrorInput,
   NetworkMonitorContextType,
@@ -38,9 +39,10 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
   const [requests, setRequests] = useState<NetworkRequest[]>([]);
   const emitterRef = useRef<NativeEventEmitter | null>(null);
 
-  // Configure store max requests
+  // Configure store max requests (native cap is also the per-session cap)
   useEffect(() => {
     networkStore.setMaxRequests(maxRequests);
+    NetworkTools.setMaxRequests(maxRequests);
   }, [maxRequests]);
 
   // Propagate body capture limit to native
@@ -95,6 +97,7 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
 
     // Initialize emitter
     emitterRef.current = new NativeEventEmitter(NetworkTools);
+    sessionStore.init(emitterRef.current);
 
     // Load existing requests from native
     if (typeof NetworkTools.getAllRequests === 'function') {
@@ -123,6 +126,7 @@ export const NetworkMonitorProvider: React.FC<NetworkMonitorProviderProps> = ({
     return () => {
       subscription?.remove();
       emitterRef.current?.removeAllListeners(NETWORK_EVENT_NAME);
+      sessionStore.dispose();
     };
   }, []);
 

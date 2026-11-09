@@ -2,17 +2,65 @@ package com.networktools.interceptor
 
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.networktools.models.NetworkRequest
+import org.json.JSONArray
+import org.json.JSONObject
 
 object NetworkToolsEventEmitter {
   private var reactContext: ReactApplicationContext? = null
 
   const val EVENT_NETWORK_REQUEST = "NetworkTools:onRequest"
+  const val EVENT_SESSION_CHANGE = "NetworkTools:onSessionChange"
 
   fun initialize(context: ReactApplicationContext) {
     reactContext = context
+  }
+
+  fun emitJson(eventName: String, body: JSONObject) {
+    val context = reactContext ?: return
+    if (!context.hasActiveReactInstance()) return
+    try {
+      context
+        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        .emit(eventName, jsonToMap(body))
+    } catch (e: Exception) {
+      android.util.Log.e("NetworkTools", "Failed to emit $eventName", e)
+    }
+  }
+
+  private fun jsonToMap(json: JSONObject): WritableMap {
+    val map = Arguments.createMap()
+    json.keys().forEach { key ->
+      when (val value = json.get(key)) {
+        JSONObject.NULL -> map.putNull(key)
+        is JSONObject -> map.putMap(key, jsonToMap(value))
+        is JSONArray -> map.putArray(key, jsonToArray(value))
+        is Boolean -> map.putBoolean(key, value)
+        is Int -> map.putInt(key, value)
+        is Number -> map.putDouble(key, value.toDouble())
+        else -> map.putString(key, value.toString())
+      }
+    }
+    return map
+  }
+
+  private fun jsonToArray(json: JSONArray): WritableArray {
+    val array = Arguments.createArray()
+    for (i in 0 until json.length()) {
+      when (val value = json.get(i)) {
+        JSONObject.NULL -> array.pushNull()
+        is JSONObject -> array.pushMap(jsonToMap(value))
+        is JSONArray -> array.pushArray(jsonToArray(value))
+        is Boolean -> array.pushBoolean(value)
+        is Int -> array.pushInt(value)
+        is Number -> array.pushDouble(value.toDouble())
+        else -> array.pushString(value.toString())
+      }
+    }
+    return array
   }
 
   fun emitNetworkRequest(request: NetworkRequest) {
@@ -75,6 +123,15 @@ object NetworkToolsEventEmitter {
 
     // Error
     request.error?.let { map.putString("error", it) }
+
+    map.putBoolean("requestBodyTruncated", request.requestBodyTruncated)
+    map.putBoolean("responseBodyTruncated", request.responseBodyTruncated)
+    map.putString("requestBodyEncoding", request.requestBodyEncoding)
+    map.putString("responseBodyEncoding", request.responseBodyEncoding)
+    request.requestContentType?.let { map.putString("requestContentType", it) }
+    request.responseContentType?.let { map.putString("responseContentType", it) }
+    map.putArray("redactedRequestHeaders", Arguments.fromList(request.redactedRequestHeaders))
+    map.putArray("redactedResponseHeaders", Arguments.fromList(request.redactedResponseHeaders))
 
     return map
   }

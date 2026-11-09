@@ -11,6 +11,21 @@ export interface Spec extends TurboModule {
   getRequestCount(): number;
   setMaxBodyCaptureBytes(bytes: number): void;
   setRedactHeaders(headers: string[]): void;
+  setMaxRequests(max: number): void;
+  isCaptureActive(): boolean;
+  /** Active session JSON, or "" when refused. */
+  startSession(): string;
+  /** Saved index entry JSON, or "" when nothing was recording. */
+  stopSession(): Promise<string>;
+  /** Active session JSON, or "" when not recording. */
+  getActiveSession(): string;
+  getActiveSessionSummaries(): string;
+  listSessions(): Promise<string>;
+  getSessionSummaries(sessionId: string): Promise<string>;
+  /** Request line JSON, or "" when not found. */
+  getSessionRequest(sessionId: string, requestId: string): Promise<string>;
+  deleteSession(sessionId: string): Promise<void>;
+  clearSessions(): Promise<void>;
   addListener(eventType: string): void;
   removeListeners(count: number): void;
 }
@@ -62,6 +77,49 @@ const unavailableModule: Spec = {
   },
   setRedactHeaders() {
     warnUnavailable('setRedactHeaders');
+  },
+  setMaxRequests() {
+    warnUnavailable('setMaxRequests');
+  },
+  isCaptureActive() {
+    warnUnavailable('isCaptureActive');
+    return false;
+  },
+  startSession() {
+    warnUnavailable('startSession');
+    return '';
+  },
+  stopSession() {
+    warnUnavailable('stopSession');
+    return Promise.resolve('');
+  },
+  getActiveSession() {
+    warnUnavailable('getActiveSession');
+    return '';
+  },
+  getActiveSessionSummaries() {
+    warnUnavailable('getActiveSessionSummaries');
+    return '[]';
+  },
+  listSessions() {
+    warnUnavailable('listSessions');
+    return Promise.resolve('[]');
+  },
+  getSessionSummaries() {
+    warnUnavailable('getSessionSummaries');
+    return Promise.resolve('[]');
+  },
+  getSessionRequest() {
+    warnUnavailable('getSessionRequest');
+    return Promise.resolve('');
+  },
+  deleteSession() {
+    warnUnavailable('deleteSession');
+    return Promise.resolve();
+  },
+  clearSessions() {
+    warnUnavailable('clearSessions');
+    return Promise.resolve();
   },
   addListener() {
     warnUnavailable('addListener');

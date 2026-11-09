@@ -11,20 +11,7 @@ import { EmptyState } from '../../../components/EmptyState';
 import { SearchBar } from '../../../components/SearchBar';
 import { RequestListItem } from '../components/RequestListItem';
 import type { NetworkRequest } from '../../../context/types';
-
-function filterRequests(
-  requests: NetworkRequest[],
-  query: string
-): NetworkRequest[] {
-  if (!query.trim()) return requests;
-  const q = query.toLowerCase();
-  return requests.filter(
-    (r) =>
-      r.url.toLowerCase().includes(q) ||
-      r.method.toLowerCase().includes(q) ||
-      String(r.responseCode).includes(q)
-  );
-}
+import { filterRequests } from '../../../util/filterRequests';
 
 const ITEM_TOTAL_HEIGHT = LIST_ITEM_HEIGHT + LIST_ITEM_DIVIDER_HEIGHT;
 

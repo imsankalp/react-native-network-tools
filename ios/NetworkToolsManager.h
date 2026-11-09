@@ -34,6 +34,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 + (void)activate;
 
+/** YES once +activate has registered the interceptor. Always NO in release builds. */
+@property (nonatomic, readonly, getter=isCaptureActive) BOOL captureActive;
+
 /**
  * Called by the native module to hand over its RCTEventEmitter reference so
  * the interceptor can emit events to JavaScript.
@@ -45,6 +48,9 @@ NS_ASSUME_NONNULL_BEGIN
  * No-op if no emitter is registered or in release builds.
  */
 - (void)emitRequest:(NSDictionary *)requestDict;
+
+/** Emits any supported event. No-op if no emitter is registered or in release builds. */
+- (void)emitEvent:(NSString *)name body:(NSDictionary *)body;
 
 @end
 

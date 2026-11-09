@@ -1,16 +1,16 @@
 package com.networktools
 
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
-import com.networktools.interceptor.NetworkToolsEventEmitter
 
 class NetworkToolsLegacyModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
 
   init {
-    NetworkToolsEventEmitter.initialize(reactContext)
+    NetworkToolsModuleDelegate.initialize(reactContext)
   }
 
   override fun getName(): String {
@@ -50,6 +50,42 @@ class NetworkToolsLegacyModule(reactContext: ReactApplicationContext) :
     }
     NetworkToolsManager.redactHeaders = set
   }
+
+  @ReactMethod
+  fun setMaxRequests(max: Double) = NetworkToolsModuleDelegate.setMaxRequests(max)
+
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun isCaptureActive(): Boolean = NetworkToolsModuleDelegate.isCaptureActive()
+
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun startSession(): String = NetworkToolsModuleDelegate.startSession()
+
+  @ReactMethod
+  fun stopSession(promise: Promise) = NetworkToolsModuleDelegate.stopSession(promise)
+
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun getActiveSession(): String = NetworkToolsModuleDelegate.getActiveSession()
+
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun getActiveSessionSummaries(): String = NetworkToolsModuleDelegate.getActiveSessionSummaries()
+
+  @ReactMethod
+  fun listSessions(promise: Promise) = NetworkToolsModuleDelegate.listSessions(promise)
+
+  @ReactMethod
+  fun getSessionSummaries(sessionId: String, promise: Promise) =
+    NetworkToolsModuleDelegate.getSessionSummaries(sessionId, promise)
+
+  @ReactMethod
+  fun getSessionRequest(sessionId: String, requestId: String, promise: Promise) =
+    NetworkToolsModuleDelegate.getSessionRequest(sessionId, requestId, promise)
+
+  @ReactMethod
+  fun deleteSession(sessionId: String, promise: Promise) =
+    NetworkToolsModuleDelegate.deleteSession(sessionId, promise)
+
+  @ReactMethod
+  fun clearSessions(promise: Promise) = NetworkToolsModuleDelegate.clearSessions(promise)
 
   @ReactMethod
   fun addListener(eventType: String?) {}

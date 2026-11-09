@@ -8,12 +8,15 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
 import { colors } from '../../config/color';
+import { useSessions } from '../../hooks/useSessions';
 import {
   FLOATING_BUTTON_DEFAULT_RIGHT_OFFSET,
   FLOATING_BUTTON_DEFAULT_Y_FRACTION,
   FLOATING_BUTTON_EDGE_PADDING,
+  FLOATING_BUTTON_REC_DOT_SIZE,
   FLOATING_BUTTON_SIZE,
   TAP_DISTANCE_THRESHOLD,
 } from '../../config/layout';
@@ -35,6 +38,7 @@ function getInitialPosition() {
 }
 
 export const FloatingButton: React.FC<FloatingButtonProps> = ({ onPress }) => {
+  const isRecording = useSessions().activeSession !== null;
   const initial = useRef(getInitialPosition()).current;
   const position = useRef(new Animated.ValueXY(initial)).current;
   // Track raw pixel position for snap calculation without reading Animated internals.
@@ -130,10 +134,15 @@ export const FloatingButton: React.FC<FloatingButtonProps> = ({ onPress }) => {
         onPress={onPress}
         activeOpacity={0.85}
         accessibilityRole="button"
-        accessibilityLabel="Open Network Monitor"
+        accessibilityLabel={
+          isRecording
+            ? 'Open Network Monitor, recording in progress'
+            : 'Open Network Monitor'
+        }
       >
         <Text style={styles.icon}>🔍</Text>
       </TouchableOpacity>
+      {isRecording ? <View style={styles.recDot} pointerEvents="none" /> : null}
     </Animated.View>
   );
 };
@@ -159,5 +168,16 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 22,
+  },
+  recDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: FLOATING_BUTTON_REC_DOT_SIZE,
+    height: FLOATING_BUTTON_REC_DOT_SIZE,
+    borderRadius: FLOATING_BUTTON_REC_DOT_SIZE / 2,
+    backgroundColor: colors.error,
+    borderWidth: 2,
+    borderColor: colors.white,
   },
 });

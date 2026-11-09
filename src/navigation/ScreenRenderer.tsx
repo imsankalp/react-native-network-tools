@@ -5,6 +5,8 @@ import RequestListScreen from '../features/network-requests/screens/RequestListS
 import RequestDetailScreen from '../features/network-requests/screens/RequestDetailScreen';
 import WebSocketListScreen from '../features/websocket/screens/WebSocketListScreen';
 import SessionListScreen from '../features/sessions/screens/SessionListScreen';
+import SessionRecordingScreen from '../features/sessions/screens/SessionRecordingScreen';
+import SessionDetailScreen from '../features/sessions/screens/SessionDetailScreen';
 import InsightsOverviewScreen from '../features/insights/screens/InsightsOverviewScreen';
 
 // ─── Screen component type ────────────────────────────────────────────────────
@@ -39,10 +41,8 @@ const SCREEN_REGISTRY: {
   'session-list': SessionListScreen as ScreenComponent<
     Extract<Screen, { name: 'session-list' }>
   >,
-  'session-detail': PlaceholderScreen as ScreenComponent<
-    Extract<Screen, { name: 'session-detail' }>
-  >,
-  'session-recording': PlaceholderScreen as ScreenComponent<
+  'session-detail': SessionDetailScreen,
+  'session-recording': SessionRecordingScreen as ScreenComponent<
     Extract<Screen, { name: 'session-recording' }>
   >,
 

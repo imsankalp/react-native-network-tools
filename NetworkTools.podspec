@@ -23,7 +23,11 @@ Pod::Spec.new do |s|
   # module map for this pod and inject -fmodule-map-file into every dependent
   # target's xcconfig, which is what makes `import NetworkTools` work in Swift
   # without use_frameworks!. (Same mechanism used by RNReanimated et al.)
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    # Stringified in NetworkToolsSessionRecorder.m for the session index.
+    'GCC_PREPROCESSOR_DEFINITIONS' => "$(inherited) NT_LIBRARY_VERSION=#{s.version}"
+  }
 
   install_modules_dependencies(s)
 end

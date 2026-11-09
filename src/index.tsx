@@ -4,8 +4,9 @@ import {
 } from './context/NetworkMonitorContext';
 import type { AnnotateNetworkRequestErrorInput } from './context/types';
 import { networkStore } from './store/NetworkStore';
+import { useSessions } from './hooks/useSessions';
 
-export { NetworkMonitorProvider, useNetworkMonitor };
+export { NetworkMonitorProvider, useNetworkMonitor, useSessions };
 
 // Native module direct access (for advanced usage)
 import NetworkTools, {
@@ -76,6 +77,11 @@ import type {
   NetworkMonitorContextType,
   NetworkMonitorProviderProps,
   TriggerMode,
+  ActiveSession,
+  SessionIndexEntry,
+  SessionRequest,
+  SessionRequestSummary,
+  UseSessionsResult,
 } from './context/types';
 
 export type {
@@ -84,6 +90,11 @@ export type {
   NetworkMonitorContextType,
   NetworkMonitorProviderProps,
   TriggerMode,
+  ActiveSession,
+  SessionIndexEntry,
+  SessionRequest,
+  SessionRequestSummary,
+  UseSessionsResult,
 };
 
 // Default export for backward compatibility

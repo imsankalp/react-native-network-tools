@@ -6,6 +6,7 @@ static NSString *const kNTEventName = @"NetworkTools:onRequest";
 
 @implementation NetworkToolsManager {
   __weak RCTEventEmitter *_emitter;
+  BOOL _captureActive;
 }
 
 + (instancetype)shared {
@@ -26,7 +27,12 @@ static NSString *const kNTEventName = @"NetworkTools:onRequest";
   // internal sessions (which snapshot the protocol list at session creation
   // time) also include NetworkToolsInterceptor.
   [NetworkToolsInterceptor swizzleSessionConfiguration];
+  [self shared]->_captureActive = YES;
 #endif
+}
+
+- (BOOL)isCaptureActive {
+  return _captureActive;
 }
 
 - (void)setEmitter:(nullable id)emitter {
@@ -34,10 +40,14 @@ static NSString *const kNTEventName = @"NetworkTools:onRequest";
 }
 
 - (void)emitRequest:(NSDictionary *)requestDict {
+  [self emitEvent:kNTEventName body:requestDict];
+}
+
+- (void)emitEvent:(NSString *)name body:(NSDictionary *)body {
 #if DEBUG
   RCTEventEmitter *emitter = _emitter;
   if (emitter == nil) return;
-  [emitter sendEventWithName:kNTEventName body:requestDict];
+  [emitter sendEventWithName:name body:body];
 #endif
 }
 

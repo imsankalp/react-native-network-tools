@@ -206,6 +206,28 @@ annotateNetworkRequestError({
 });
 ```
 
+### 4. Record sessions (debug builds)
+
+The **Sessions** tab records the requests of one flow, such as a login, so you can review them later without the rest of the app's traffic.
+
+1. Open the monitor, go to **Sessions** and tap **Start recording**.
+2. Use your app. You can close the monitor; a red dot on the floating button shows that a recording is running.
+3. Reopen the monitor and tap **Stop**. The saved session opens, listing its requests in order; tap one for full details.
+
+How it behaves:
+
+- One recording at a time. A request belongs to the session if it **started and finished** while recording; requests still in flight when you tap Stop are not included.
+- A recording survives closing the monitor and JS reloads. It is lost if the app process is killed before you stop it.
+- Each session holds at most `maxRequests` requests. At the limit, capture stops and the session is marked "limit reached".
+- Sessions are named `api-recording-YYYY-MM-DDTHH-mm-ss` (local start time). The 20 most recent are kept.
+- `clearRequests` never deletes sessions; delete them from the Sessions tab.
+
+**Debug builds only.** Sessions use native capture, which only runs in debug builds (iOS `DEBUG`, Android library debug variant). Release builds, and Android variants using the no-op artifact, cannot record or store sessions.
+
+**Where the files live.** Sessions are saved on the device only, in a private folder excluded from backups: `Library/Application Support/network-tools/sessions/` on iOS and `no_backup/network-tools/sessions/` on Android. Nothing is sent off the device. Bodies are stored as captured, so they may contain personal data or tokens even when headers are redacted. The format is documented in [docs/SESSION_FILE_FORMAT.md](docs/SESSION_FILE_FORMAT.md).
+
+To read session state in your own UI, use `useSessions()` (see the API reference).
+
 ---
 
 ## API Reference
@@ -217,6 +239,10 @@ React context provider. Renders the floating monitor and manages request state.
 ### `useNetworkMonitor()`
 
 Returns `{ requests, clearRequests, getRequestById, addRequest, annotateRequestError }`.
+
+### `useSessions()`
+
+Returns session state and actions: `{ availability, activeSession, activeRequests, sessions, startSession, stopSession, refreshSessions, getSessionSummaries, getSessionRequest, deleteSession, clearSessions }`. `availability` is `'available'`, `'capture-inactive'` or `'native-unavailable'`.
 
 ### Low-level native API
 
@@ -255,6 +281,14 @@ type NetworkRequest = {
     source: 'react-native';
     timestamp: number;
   };
+  requestBodyTruncated?: boolean; // body cut at maxBodyCaptureBytes
+  responseBodyTruncated?: boolean;
+  requestBodyEncoding?: 'utf8' | 'omitted'; // 'omitted': binary or not UTF-8, no text kept
+  responseBodyEncoding?: 'utf8' | 'omitted';
+  requestContentType?: string;
+  responseContentType?: string;
+  redactedRequestHeaders?: string[]; // names of headers whose values were redacted
+  redactedResponseHeaders?: string[];
 };
 ```
 

@@ -33,6 +33,8 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    def packageJson = new groovy.json.JsonSlurper().parse(file("../package.json"))
+    buildConfigField "String", "NETWORK_TOOLS_VERSION", "\"${packageJson.version}\""
   }
 
   buildFeatures {

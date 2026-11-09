@@ -6,6 +6,9 @@
 /** Width and height of the draggable floating action button. */
 export const FLOATING_BUTTON_SIZE = 56;
 
+/** Diameter of the red dot shown on the button while a session is recording. */
+export const FLOATING_BUTTON_REC_DOT_SIZE = 14;
+
 /** Minimum distance from any screen edge the button can be dragged to. */
 export const FLOATING_BUTTON_EDGE_PADDING = 16;
 

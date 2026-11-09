@@ -7,8 +7,14 @@ import { LIST_ITEM_HEIGHT } from '../../../config/layout';
 import { MethodBadge, StatusBadge } from '../../../components/Badge';
 import type { NetworkRequest } from '../../../context/types';
 
+/** The fields a row shows; full requests and session summaries both fit. */
+export type RequestListItemData = Pick<
+  NetworkRequest,
+  'id' | 'method' | 'url' | 'responseCode' | 'duration' | 'requestTime'
+>;
+
 interface RequestListItemProps {
-  request: NetworkRequest;
+  request: RequestListItemData;
   onPress: () => void;
 }
 
