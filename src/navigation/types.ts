@@ -10,7 +10,7 @@ export type Tab = 'requests' | 'websocket' | 'sessions' | 'insights';
 export type Screen =
   // Requests feature
   | { name: 'request-list' }
-  | { name: 'request-detail'; requestId: string }
+  | { name: 'request-detail'; requestId: string; sessionId?: string }
   // WebSocket feature (forward-compat placeholder)
   | { name: 'websocket-list' }
   | { name: 'websocket-detail'; connectionId: string }
@@ -42,6 +42,7 @@ export type NavigatorState = {
 export type NavAction =
   | { type: 'SWITCH_TAB'; tab: Tab }
   | { type: 'PUSH'; screen: Screen }
+  | { type: 'REPLACE'; screen: Screen }
   | { type: 'POP' }
   | { type: 'POP_TO_ROOT' };
 
@@ -54,6 +55,8 @@ export type NavigatorContextType = {
   stackDepth: number;
   switchTab: (tab: Tab) => void;
   push: (screen: Screen) => void;
+  /** Swaps the top screen; at the root it pushes instead, so the root is never replaced. */
+  replace: (screen: Screen) => void;
   pop: () => void;
   popToRoot: () => void;
 };

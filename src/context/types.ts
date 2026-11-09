@@ -48,6 +48,76 @@ export type NetworkRequest = {
 /** `omitted`: the body was binary or not valid UTF-8, so no text was kept. */
 export type BodyEncoding = 'utf8' | 'omitted';
 
+export type SessionContext = {
+  platform: 'ios' | 'android';
+  appId: string;
+  appVersion: string;
+  libraryVersion: string;
+};
+
+export type ActiveSession = {
+  id: string;
+  name: string;
+  status: 'recording';
+  startTime: number;
+  requestCount: number;
+  limitReached: boolean;
+};
+
+export type SessionIndexEntry = SessionContext & {
+  id: string;
+  name: string;
+  status: 'stopped';
+  startTime: number;
+  endTime: number;
+  requestCount: number;
+  limitReached: boolean;
+  sizeBytes: number;
+  schemaVersion: number;
+};
+
+export type SessionRequestSummary = {
+  id: string;
+  seq: number;
+  method: string;
+  url: string;
+  responseCode: number;
+  duration: number;
+  requestTime: number;
+  error?: string;
+};
+
+/** One line of a session's NDJSON file. */
+export type SessionRequest = NetworkRequest & { seq: number };
+
+export type SessionChangeEvent = {
+  type: 'started' | 'request' | 'limitReached' | 'stopped';
+  activeSession: ActiveSession | null;
+  addedRequest?: SessionRequestSummary;
+};
+
+export type SessionsAvailability =
+  | 'available'
+  | 'native-unavailable'
+  | 'capture-inactive';
+
+export type UseSessionsResult = {
+  availability: SessionsAvailability;
+  activeSession: ActiveSession | null;
+  activeRequests: SessionRequestSummary[];
+  sessions: SessionIndexEntry[];
+  startSession: () => ActiveSession | null;
+  stopSession: () => Promise<SessionIndexEntry | null>;
+  refreshSessions: () => Promise<void>;
+  getSessionSummaries: (sessionId: string) => Promise<SessionRequestSummary[]>;
+  getSessionRequest: (
+    sessionId: string,
+    requestId: string
+  ) => Promise<SessionRequest | null>;
+  deleteSession: (sessionId: string) => Promise<void>;
+  clearSessions: () => Promise<void>;
+};
+
 export type NetworkMonitorContextType = {
   requests: NetworkRequest[];
   addRequest: (request: NetworkRequest) => void;
