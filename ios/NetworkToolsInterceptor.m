@@ -35,7 +35,7 @@ static NSArray *nt_injectedProtocolClasses(NSURLSessionConfiguration *self, SEL 
 @property (nonatomic, strong, nullable) NSHTTPURLResponse *httpResponse;
 @property (nonatomic, assign) double requestStartTime;
 @property (nonatomic, copy) NSString *requestId;
-@property (nonatomic, copy, nullable) NSString *capturedRequestBody;
+@property (nonatomic, strong, nullable) NSData *capturedRequestData;
 @end
 
 @implementation NetworkToolsInterceptor
@@ -82,12 +82,7 @@ static NSArray *nt_injectedProtocolClasses(NSURLSessionConfiguration *self, SEL 
     streamData = [self drainStream:self.request.HTTPBodyStream];
   }
 
-  // Capture body string for recording.
-  if (streamData.length > 0) {
-    self.capturedRequestBody = [self bodyStringFromData:streamData];
-  } else if (self.request.HTTPBody.length > 0) {
-    self.capturedRequestBody = [self bodyStringFromData:self.request.HTTPBody];
-  }
+  self.capturedRequestData = streamData.length > 0 ? streamData : self.request.HTTPBody;
 
   NSMutableURLRequest *forwarded = [self.request mutableCopy];
 
@@ -175,6 +170,7 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   double duration = responseTime - self.requestStartTime;
 
   NSSet<NSString *> *redactSet = [NetworkToolsManager shared].redactHeaderNames;
+  NSHTTPURLResponse *response = self.httpResponse;
 
   NSMutableDictionary *entry = [NSMutableDictionary dictionary];
   entry[@"id"]             = self.requestId;
@@ -183,14 +179,26 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   entry[@"requestTime"]    = @(self.requestStartTime);
   entry[@"responseTime"]   = @(responseTime);
   entry[@"duration"]       = @(duration);
-  entry[@"requestHeaders"] = [self redactHeaders:request.allHTTPHeaderFields ?: @{} using:redactSet];
-  entry[@"requestBody"]    = self.capturedRequestBody ?: @"";
+  entry[@"responseCode"]   = response ? @(response.statusCode) : @0;
+  entry[@"error"]          = error ? (error.localizedDescription ?: @"Unknown error") : @"";
 
-  NSHTTPURLResponse *response = self.httpResponse;
-  entry[@"responseCode"]    = response ? @(response.statusCode) : @0;
-  entry[@"responseHeaders"] = [self redactHeaders:(response ? response.allHeaderFields : @{}) using:redactSet];
-  entry[@"responseBody"]    = [self responseBodyStringForResponse:response];
-  entry[@"error"]           = error ? (error.localizedDescription ?: @"Unknown error") : @"";
+  [self putHeaders:request.allHTTPHeaderFields ?: @{}
+            prefix:@"request"
+         redactSet:redactSet
+              into:entry];
+  [self putHeaders:(response ? response.allHeaderFields : @{})
+            prefix:@"response"
+         redactSet:redactSet
+              into:entry];
+
+  [self putBody:self.capturedRequestData
+    contentType:[request valueForHTTPHeaderField:@"Content-Type"]
+         prefix:@"request"
+           into:entry];
+  [self putBody:self.responseData
+    contentType:[response valueForHTTPHeaderField:@"Content-Type"]
+         prefix:@"response"
+           into:entry];
 
   [[NetworkToolsStorage shared] addRequest:entry];
   [[NetworkToolsManager shared] emitRequest:entry];
@@ -198,15 +206,78 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
 
 #pragma mark - Helpers
 
-- (NSDictionary *)redactHeaders:(NSDictionary *)headers using:(NSSet<NSString *> *)redactSet {
-  if (redactSet.count == 0) return headers;
+// Writes <prefix>Headers and redacted<Prefix>Headers.
+- (void)putHeaders:(NSDictionary *)headers
+            prefix:(NSString *)prefix
+         redactSet:(NSSet<NSString *> *)redactSet
+              into:(NSMutableDictionary *)entry {
   NSMutableDictionary *result = [NSMutableDictionary dictionaryWithCapacity:headers.count];
+  NSMutableArray<NSString *> *redacted = [NSMutableArray array];
   [headers enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
-    NSString *lowerKey = [key respondsToSelector:@selector(lowercaseString)]
-      ? [key lowercaseString] : key;
-    result[key] = [redactSet containsObject:lowerKey] ? @"[redacted]" : value;
+    NSString *name = [key description];
+    if ([redactSet containsObject:name.lowercaseString]) {
+      result[name] = @"[redacted]";
+      [redacted addObject:name];
+    } else {
+      result[name] = value;
+    }
   }];
-  return [result copy];
+  entry[[prefix stringByAppendingString:@"Headers"]] = [result copy];
+  NSString *capitalized = [[[prefix substringToIndex:1] uppercaseString]
+                           stringByAppendingString:[prefix substringFromIndex:1]];
+  entry[[NSString stringWithFormat:@"redacted%@Headers", capitalized]] = [redacted copy];
+}
+
+// Writes <prefix>Body, <prefix>BodyTruncated, <prefix>BodyEncoding and,
+// when known, <prefix>ContentType.
+- (void)putBody:(nullable NSData *)data
+    contentType:(nullable NSString *)contentType
+         prefix:(NSString *)prefix
+           into:(NSMutableDictionary *)entry {
+  NSUInteger limit = (NSUInteger)MAX(ntMaxBodyBytes(), 0);
+  BOOL binary = [self isBinaryContentType:contentType];
+  BOOL truncated = !binary && data.length > limit;
+  NSString *body = @"";
+  NSString *encoding = binary ? @"omitted" : @"utf8";
+
+  if (!binary && data.length > 0) {
+    NSData *capped = truncated ? [data subdataWithRange:NSMakeRange(0, limit)] : data;
+    NSString *decoded = [self utf8StringFromData:capped allowTrailingTrim:truncated];
+    if (decoded) {
+      body = decoded;
+    } else {
+      encoding = @"omitted";
+    }
+  }
+
+  entry[[prefix stringByAppendingString:@"Body"]] = body;
+  entry[[prefix stringByAppendingString:@"BodyTruncated"]] = @(truncated);
+  entry[[prefix stringByAppendingString:@"BodyEncoding"]] = encoding;
+  if (contentType.length > 0) {
+    entry[[prefix stringByAppendingString:@"ContentType"]] = contentType;
+  }
+}
+
+// A cut at the capture limit can split a multi-byte character; drop up to 3
+// trailing bytes so the rest still decodes.
+- (nullable NSString *)utf8StringFromData:(NSData *)data allowTrailingTrim:(BOOL)allowTrim {
+  NSUInteger maxTrim = allowTrim ? MIN((NSUInteger)3, data.length) : 0;
+  for (NSUInteger trim = 0; trim <= maxTrim; trim++) {
+    NSData *slice = trim == 0 ? data : [data subdataWithRange:NSMakeRange(0, data.length - trim)];
+    NSString *decoded = [[NSString alloc] initWithData:slice encoding:NSUTF8StringEncoding];
+    if (decoded) return decoded;
+  }
+  return nil;
+}
+
+- (BOOL)isBinaryContentType:(nullable NSString *)contentType {
+  NSString *type = contentType.lowercaseString ?: @"";
+  for (NSString *prefix in @[@"image/", @"video/", @"audio/", @"font/",
+                             @"application/octet-stream", @"application/zip",
+                             @"application/pdf", @"application/x-"]) {
+    if ([type hasPrefix:prefix]) return YES;
+  }
+  return NO;
 }
 
 // Reads the whole stream: the buffered data is also what gets forwarded.
@@ -220,39 +291,6 @@ willPerformHTTPRedirection:(NSHTTPURLResponse *)response
   }
   [stream close];
   return buffer;
-}
-
-- (nullable NSString *)bodyStringFromData:(NSData *)data {
-  if (data.length == 0) return nil;
-  NSData *capped = data.length <= (NSUInteger)ntMaxBodyBytes()
-    ? data
-    : [data subdataWithRange:NSMakeRange(0, (NSUInteger)ntMaxBodyBytes())];
-  return [[NSString alloc] initWithData:capped encoding:NSUTF8StringEncoding];
-}
-
-- (NSString *)responseBodyStringForResponse:(nullable NSHTTPURLResponse *)response {
-  NSString *mimeType = response.MIMEType.lowercaseString ?: @"";
-  if ([mimeType hasPrefix:@"image/"] ||
-      [mimeType hasPrefix:@"video/"] ||
-      [mimeType hasPrefix:@"audio/"] ||
-      [mimeType isEqualToString:@"application/octet-stream"] ||
-      [mimeType isEqualToString:@"application/zip"]) {
-    return @"[binary content — not captured]";
-  }
-
-  if (self.responseData.length == 0) return @"";
-
-  NSData *capped = self.responseData.length <= (NSUInteger)ntMaxBodyBytes()
-    ? self.responseData
-    : [self.responseData subdataWithRange:NSMakeRange(0, (NSUInteger)ntMaxBodyBytes())];
-
-  NSString *body = [[NSString alloc] initWithData:capped encoding:NSUTF8StringEncoding] ?: @"";
-
-  if (self.responseData.length > (NSUInteger)ntMaxBodyBytes()) {
-    body = [body stringByAppendingFormat:@"\n[... truncated — %lu bytes total]",
-            (unsigned long)self.responseData.length];
-  }
-  return body;
 }
 
 @end

@@ -4,8 +4,8 @@ import { colors } from '../../../../config/color';
 import { spacing } from '../../../../config/spacing';
 import { typography } from '../../../../config/typography';
 import { KeyValueTable } from '../../../../components/KeyValueTable';
-import { JsonViewer } from '../../../../components/JsonViewer';
 import type { NetworkRequest } from '../../../../context/types';
+import { BodySection } from './BodySection';
 
 interface ResponseTabProps {
   request: NetworkRequest;
@@ -30,13 +30,12 @@ export const ResponseTab: React.FC<ResponseTabProps> = ({ request }) => {
       <View style={styles.divider} />
 
       <Text style={styles.sectionTitle}>Body</Text>
-      {request.responseBody ? (
-        <JsonViewer value={request.responseBody} />
-      ) : (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>No response body</Text>
-        </View>
-      )}
+      <BodySection
+        body={request.responseBody}
+        truncated={request.responseBodyTruncated}
+        encoding={request.responseBodyEncoding}
+        emptyLabel="No response body"
+      />
 
       {hasError ? (
         <>

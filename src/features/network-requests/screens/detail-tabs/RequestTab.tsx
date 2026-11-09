@@ -4,8 +4,8 @@ import { colors } from '../../../../config/color';
 import { spacing } from '../../../../config/spacing';
 import { typography } from '../../../../config/typography';
 import { KeyValueTable } from '../../../../components/KeyValueTable';
-import { JsonViewer } from '../../../../components/JsonViewer';
 import type { NetworkRequest } from '../../../../context/types';
+import { BodySection } from './BodySection';
 
 interface RequestTabProps {
   request: NetworkRequest;
@@ -29,13 +29,12 @@ export const RequestTab: React.FC<RequestTabProps> = ({ request }) => {
       <View style={styles.divider} />
 
       <Text style={styles.sectionTitle}>Body</Text>
-      {request.requestBody ? (
-        <JsonViewer value={request.requestBody} />
-      ) : (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>No request body</Text>
-        </View>
-      )}
+      <BodySection
+        body={request.requestBody}
+        truncated={request.requestBodyTruncated}
+        encoding={request.requestBodyEncoding}
+        emptyLabel="No request body"
+      />
     </ScrollView>
   );
 };

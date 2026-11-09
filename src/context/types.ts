@@ -35,7 +35,18 @@ export type NetworkRequest = {
   responseTime: number;
   error?: string;
   customError?: NetworkRequestCustomError;
+  requestBodyTruncated?: boolean;
+  responseBodyTruncated?: boolean;
+  requestBodyEncoding?: BodyEncoding;
+  responseBodyEncoding?: BodyEncoding;
+  requestContentType?: string;
+  responseContentType?: string;
+  redactedRequestHeaders?: string[];
+  redactedResponseHeaders?: string[];
 };
+
+/** `omitted`: the body was binary or not valid UTF-8, so no text was kept. */
+export type BodyEncoding = 'utf8' | 'omitted';
 
 export type NetworkMonitorContextType = {
   requests: NetworkRequest[];

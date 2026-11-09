@@ -18,7 +18,15 @@ data class  NetworkRequest(
   val responseBody: String?,
   val responseTime: Long?,
   val duration: Long?,
-  val error: String?
+  val error: String?,
+  val requestBodyTruncated: Boolean = false,
+  val responseBodyTruncated: Boolean = false,
+  val requestBodyEncoding: String = ENCODING_UTF8,
+  val responseBodyEncoding: String = ENCODING_UTF8,
+  val requestContentType: String? = null,
+  val responseContentType: String? = null,
+  val redactedRequestHeaders: List<String> = emptyList(),
+  val redactedResponseHeaders: List<String> = emptyList()
 ) {
   fun toJson(): JSONObject {
     return JSONObject().apply {
@@ -34,10 +42,21 @@ data class  NetworkRequest(
       put("responseTime", responseTime ?: 0)
       put("duration", duration ?: 0)
       put("error", error ?: "")
+      put("requestBodyTruncated", requestBodyTruncated)
+      put("responseBodyTruncated", responseBodyTruncated)
+      put("requestBodyEncoding", requestBodyEncoding)
+      put("responseBodyEncoding", responseBodyEncoding)
+      requestContentType?.let { put("requestContentType", it) }
+      responseContentType?.let { put("responseContentType", it) }
+      put("redactedRequestHeaders", JSONArray(redactedRequestHeaders))
+      put("redactedResponseHeaders", JSONArray(redactedResponseHeaders))
     }
   }
 
   companion object {
+    const val ENCODING_UTF8 = "utf8"
+    const val ENCODING_OMITTED = "omitted"
+
     fun fromJson(json: JSONObject): NetworkRequest {
       return NetworkRequest(
         id = json.getString("id"),
@@ -51,7 +70,15 @@ data class  NetworkRequest(
         responseBody = json.optString("responseBody", null),
         responseTime = json.optLong("responseTime", 0).takeIf { it != 0L },
         duration = json.optLong("duration", 0).takeIf { it != 0L },
-        error = json.optString("error", null)
+        error = json.optString("error", null),
+        requestBodyTruncated = json.optBoolean("requestBodyTruncated", false),
+        responseBodyTruncated = json.optBoolean("responseBodyTruncated", false),
+        requestBodyEncoding = json.optString("requestBodyEncoding", ENCODING_UTF8),
+        responseBodyEncoding = json.optString("responseBodyEncoding", ENCODING_UTF8),
+        requestContentType = json.optString("requestContentType", "").ifEmpty { null },
+        responseContentType = json.optString("responseContentType", "").ifEmpty { null },
+        redactedRequestHeaders = json.optJSONArray("redactedRequestHeaders").toStringList(),
+        redactedResponseHeaders = json.optJSONArray("redactedResponseHeaders").toStringList()
       )
     }
 
@@ -61,6 +88,11 @@ data class  NetworkRequest(
         map[key] = getString(key)
       }
       return map
+    }
+
+    private fun JSONArray?.toStringList(): List<String> {
+      if (this == null) return emptyList()
+      return (0 until length()).map { getString(it) }
     }
   }
 }
