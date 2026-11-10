@@ -31,7 +31,7 @@ function formatTs(ts: number | null | undefined): string {
 
 function formatDuration(ms: number | null | undefined): string {
   if (ms == null || ms === 0) return '—';
-  if (ms < 1000) return `${ms}ms`;
+  if (ms < 1000) return `${Math.round(ms)}ms`;
   return `${(ms / 1000).toFixed(3)}s`;
 }
 
@@ -73,7 +73,7 @@ export const TimingTab: React.FC<TimingTabProps> = ({ request }) => {
             {fraction < 1 ? <View style={{ flex: 1 - fraction }} /> : null}
           </View>
           <Text style={styles.barCaption}>
-            {duration}ms / {TIMING_BAR_MAX_REFERENCE_MS}ms reference
+            {Math.round(duration)}ms / {TIMING_BAR_MAX_REFERENCE_MS}ms reference
           </Text>
         </View>
       ) : null}

@@ -4,6 +4,7 @@
  * @returns Formatted duration string (e.g., "522ms", "1s 244ms", "2d 3h 4m 5s 123ms")
  */
 export function formatDuration(ms: number): string {
+  ms = Math.round(ms);
   if (ms < 1000) {
     return `${Math.round(ms)}ms`;
   }
